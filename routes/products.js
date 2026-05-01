@@ -8,7 +8,11 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const { cleanDoc, cleanDocs } = require('../utils/format');
 
 const router = express.Router();
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+
+/**
+ * Uploads dir ab public/uploads hai
+ */
+const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
@@ -19,8 +23,10 @@ const storage = multer.diskStorage({
         cb(null, uploadsDir);
     },
     filename: (req, file, cb) => {
-        const extension = path.extname(file.originalname || '').toLowerCase() || '.jpg';
-        const safeBaseName = path
+        const extension =
+            path.extname(file.originalname || '').toLowerCase() || '.jpg';
+        const safeBaseName =
+            path
             .basename(file.originalname || 'product-image', extension)
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
@@ -56,7 +62,14 @@ function parseStock(value) {
     return stock;
 }
 
-function validateProductFields({ name, category, price, stock, image, requireImageUpload = false }) {
+function validateProductFields({
+    name,
+    category,
+    price,
+    stock,
+    image,
+    requireImageUpload = false
+}) {
     if (!name || !String(name).trim()) {
         return 'Product name is required';
     }
@@ -86,6 +99,7 @@ function validateProductFields({ name, category, price, stock, image, requireIma
 
 function imageUrlForFile(file) {
     if (!file || !file.filename) return '';
+    // Browser friendly URL
     return `/uploads/${file.filename}`;
 }
 
@@ -102,7 +116,6 @@ function deleteUploadedFile(imageUrl) {
 
 /**
  * GET /api/products
- * Return all products
  */
 router.get('/', async(req, res) => {
     try {
@@ -121,145 +134,174 @@ router.get('/', async(req, res) => {
  * POST /api/products
  * Add new product (image required)
  */
-router.post('/', authMiddleware, adminMiddleware, upload.single('image'), async(req, res) => {
-    try {
-        console.log('ADD PRODUCT BODY:', req.body);
-        console.log('ADD PRODUCT FILE:', req.file);
+router.post(
+    '/',
+    authMiddleware,
+    adminMiddleware,
+    upload.single('image'),
+    async(req, res) => {
+        try {
+            console.log('ADD PRODUCT BODY:', req.body);
+            console.log('ADD PRODUCT FILE:', req.file);
 
-        const { name, category } = req.body || {};
-        const price = parsePrice(req.body ? req.body.price : undefined);
-        const stock = parseStock(req.body ? req.body.stock : undefined);
-        const image = imageUrlForFile(req.file);
+            const { name, category } = req.body || {};
+            const price = parsePrice(req.body ? req.body.price : undefined);
+            const stock = parseStock(req.body ? req.body.stock : undefined);
+            const image = imageUrlForFile(req.file);
 
-        const validationError = validateProductFields({
-            name,
-            category,
-            price,
-            stock,
-            image,
-            requireImageUpload: true
-        });
+            const validationError = validateProductFields({
+                name,
+                category,
+                price,
+                stock,
+                image,
+                requireImageUpload: true
+            });
 
-        if (validationError) {
-            if (req.file) {
-                deleteUploadedFile(image);
+            if (validationError) {
+                if (req.file) {
+                    deleteUploadedFile(image);
+                }
+                return res.status(400).json({ message: validationError });
             }
-            return res.status(400).json({ message: validationError });
-        }
 
-        const product = await Product.create({
-            id: await nextSequence('product'),
-            name: String(name).trim(),
-            category: String(category).trim(),
-            price,
-            image: String(image).trim(),
-            stock
-        });
+            const product = await Product.create({
+                id: await nextSequence('product'),
+                name: String(name).trim(),
+                category: String(category).trim(),
+                price,
+                image: String(image).trim(),
+                stock
+            });
 
-        res.json({ message: 'Product added successfully', product: cleanDoc(product) });
-    } catch (error) {
-        console.error('Product add error:', error);
-        if (req.file) {
-            deleteUploadedFile(imageUrlForFile(req.file));
+            res.json({
+                message: 'Product added successfully',
+                product: cleanDoc(product)
+            });
+        } catch (error) {
+            console.error('Product add error:', error);
+            if (req.file) {
+                deleteUploadedFile(imageUrlForFile(req.file));
+            }
+            res.status(500).json({
+                message: 'Error adding product',
+                error: error.message
+            });
         }
-        res.status(500).json({
-            message: 'Error adding product',
-            error: error.message
-        });
     }
-});
+);
 
 /**
  * PUT /api/products/:id
- * Update product
- * - If new image is uploaded: replace old
- * - If no new image: keep old image (stable)
+ * Update product (image optional)
  */
-router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), async(req, res) => {
-    const productId = Number(req.params.id);
+router.put(
+    '/:id',
+    authMiddleware,
+    adminMiddleware,
+    upload.single('image'),
+    async(req, res) => {
+        const productId = Number(req.params.id);
 
-    try {
-        console.log('UPDATE PRODUCT BODY:', req.body);
-        console.log('UPDATE PRODUCT FILE:', req.file);
+        try {
+            console.log('UPDATE PRODUCT BODY:', req.body);
+            console.log('UPDATE PRODUCT FILE:', req.file);
 
-        const { name, category } = req.body || {};
-        const price = parsePrice(req.body ? req.body.price : undefined);
-        const stock = parseStock(req.body ? req.body.stock : undefined);
+            const { name, category } = req.body || {};
+            const price = parsePrice(req.body ? req.body.price : undefined);
+            const stock = parseStock(req.body ? req.body.stock : undefined);
 
-        const existingProduct = await Product.findOne({ id: productId });
-        if (!existingProduct) {
+            const existingProduct = await Product.findOne({ id: productId });
+            if (!existingProduct) {
+                if (req.file) {
+                    deleteUploadedFile(imageUrlForFile(req.file));
+                }
+                return res.status(404).json({ message: 'Product not found' });
+            }
+
+            const image = req.file ?
+                imageUrlForFile(req.file) :
+                existingProduct.image;
+
+            const validationError = validateProductFields({
+                name,
+                category,
+                price,
+                stock,
+                image
+            });
+
+            if (validationError) {
+                if (req.file) {
+                    deleteUploadedFile(imageUrlForFile(req.file));
+                }
+                return res.status(400).json({ message: validationError });
+            }
+
+            const updated = await Product.findOneAndUpdate({ id: productId }, {
+                name: String(name).trim(),
+                category: String(category).trim(),
+                price,
+                image: String(image).trim(),
+                stock
+            }, { new: true });
+
+            if (
+                req.file &&
+                existingProduct.image &&
+                existingProduct.image !== image
+            ) {
+                deleteUploadedFile(existingProduct.image);
+            }
+
+            res.json({
+                message: 'Product updated successfully',
+                product: cleanDoc(updated)
+            });
+        } catch (error) {
             if (req.file) {
                 deleteUploadedFile(imageUrlForFile(req.file));
             }
-            return res.status(404).json({ message: 'Product not found' });
+            console.error('Product update error:', error);
+            res.status(500).json({
+                message: 'Error updating product',
+                error: error.message
+            });
         }
-
-        // Image logic: if new file, use it; otherwise keep existing image
-        const image = req.file ? imageUrlForFile(req.file) : existingProduct.image;
-
-        const validationError = validateProductFields({
-            name,
-            category,
-            price,
-            stock,
-            image
-        });
-
-        if (validationError) {
-            if (req.file) {
-                deleteUploadedFile(imageUrlForFile(req.file));
-            }
-            return res.status(400).json({ message: validationError });
-        }
-
-        const updated = await Product.findOneAndUpdate({ id: productId }, {
-            name: String(name).trim(),
-            category: String(category).trim(),
-            price,
-            image: String(image).trim(),
-            stock
-        }, { new: true });
-
-        // if new file uploaded, delete old one
-        if (req.file && existingProduct.image && existingProduct.image !== image) {
-            deleteUploadedFile(existingProduct.image);
-        }
-
-        res.json({ message: 'Product updated successfully', product: cleanDoc(updated) });
-    } catch (error) {
-        if (req.file) {
-            deleteUploadedFile(imageUrlForFile(req.file));
-        }
-        console.error('Product update error:', error);
-        res.status(500).json({
-            message: 'Error updating product',
-            error: error.message
-        });
     }
-});
+);
 
 /**
  * DELETE /api/products/:id
  */
-router.delete('/:id', authMiddleware, adminMiddleware, async(req, res) => {
-    try {
-        const product = await Product.findOneAndDelete({ id: Number(req.params.id) });
+router.delete(
+    '/:id',
+    authMiddleware,
+    adminMiddleware,
+    async(req, res) => {
+        try {
+            const product = await Product.findOneAndDelete({
+                id: Number(req.params.id)
+            });
 
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
+            if (!product) {
+                return res
+                    .status(404)
+                    .json({ message: 'Product not found' });
+            }
+
+            deleteUploadedFile(product.image);
+
+            res.json({ message: 'Product deleted successfully' });
+        } catch (error) {
+            console.error('Product delete error:', error);
+            res.status(500).json({
+                message: 'Error deleting product',
+                error: error.message
+            });
         }
-
-        deleteUploadedFile(product.image);
-
-        res.json({ message: 'Product deleted successfully' });
-    } catch (error) {
-        console.error('Product delete error:', error);
-        res.status(500).json({
-            message: 'Error deleting product',
-            error: error.message
-        });
     }
-});
+);
 
 // Multer error handler
 router.use((error, req, res, next) => {
