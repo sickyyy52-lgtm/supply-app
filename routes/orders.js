@@ -33,6 +33,9 @@ async function ensureWallet(userId) {
     return Wallet.findOneAndUpdate({ user_id: userId }, { $setOnInsert: { user_id: userId, balance: 0 } }, { upsert: true, new: true });
 }
 
+/**
+ * CREATE ORDER
+ */
 router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
     const stockRollbacks = [];
     let createdOrderId = null;
@@ -47,7 +50,7 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
             payment_method,
             is_subscription,
             payment_proof_base64,
-            delivery_slot // NEW
+            delivery_slot
         } = req.body;
 
         const normalizedItems = [];
@@ -70,7 +73,7 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
             return res.status(400).json({ message: 'Some products are not available' });
         }
 
-        const productMap = new Map(products.map((product) => [Number(product.id), product]));
+        const productMap = new Map(products.map((p) => [Number(p.id), p]));
         let computedTotal = 0;
         const orderItems = [];
 
@@ -109,11 +112,14 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
             const balance = Number(wallet.balance || 0);
             if (balance < orderTotal) {
                 return res.status(400).json({
-                    message: `Insufficient wallet balance. Required: ${orderTotal.toFixed(2)}, Available: ${balance.toFixed(2)}`
+                    message: `Insufficient wallet balance. Required: ${orderTotal.toFixed(
+                        2
+                    )}, Available: ${balance.toFixed(2)}`
                 });
             }
         }
 
+        // reduce stock
         for (const item of normalizedItems) {
             const updatedProduct = await Product.findOneAndUpdate({ id: item.product_id, stock: { $gte: item.quantity } }, { $inc: { stock: -item.quantity } }, { new: true });
 
@@ -121,7 +127,9 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
                 for (const rollback of stockRollbacks) {
                     await Product.updateOne({ id: rollback.product_id }, { $inc: { stock: rollback.quantity } });
                 }
-                return res.status(400).json({ message: 'One or more products went out of stock. Please review your cart.' });
+                return res.status(400).json({
+                    message: 'One or more products went out of stock. Please review your cart.'
+                });
             }
 
             stockRollbacks.push(item);
@@ -129,7 +137,7 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
 
         const user = await User.findOne({ id: req.user.id });
 
-        const normalizedDeliverySlot = String(delivery_slot || '').trim(); // '', 'morning', 'afternoon', 'evening'
+        const normalizedDeliverySlot = String(delivery_slot || '').trim();
 
         const order = await Order.create({
             id: await nextSequence('order'),
@@ -188,6 +196,9 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
     }
 });
 
+/**
+ * LIST ORDERS
+ */
 router.get('/', authMiddleware, async(req, res) => {
     try {
         const filter = req.user.role === 'admin' ? {} : { user_id: req.user.id };
@@ -199,7 +210,9 @@ router.get('/', authMiddleware, async(req, res) => {
     }
 });
 
-// NEW: single order for invoice / details
+/**
+ * SINGLE ORDER (invoice)
+ */
 router.get('/:id', authMiddleware, async(req, res) => {
     try {
         const orderId = Number(req.params.id);
@@ -226,7 +239,7 @@ router.get('/:id', authMiddleware, async(req, res) => {
             total_price: Number(order.total_price || 0),
             handling: 0,
             delivery_slot: order.delivery_slot || '',
-            items: items.map(i => ({
+            items: items.map((i) => ({
                 name: i.name,
                 quantity: i.quantity,
                 price: Number(i.price || 0)
@@ -238,10 +251,121 @@ router.get('/:id', authMiddleware, async(req, res) => {
     }
 });
 
-router.put('/:id/status', authMiddleware, adminMiddleware, validateOrderStatusUpdate, async(req, res) => {
-    // (unchanged except for possibly previous wallet logic)
-    // keep your existing code here
-    // ...
-});
+/**
+ * UPDATE ORDER STATUS
+ * body: { status: 'Approved' | 'Packed' | 'Shipped' | 'Delivered' | 'Rejected' | ... }
+ */
+router.put(
+    '/:id/status',
+    authMiddleware,
+    adminMiddleware,
+    validateOrderStatusUpdate,
+    async(req, res) => {
+        try {
+            const orderId = Number(req.params.id);
+            const { status } = req.body;
+
+            if (!orderId) {
+                return res.status(400).json({ message: 'Invalid order id' });
+            }
+
+            const order = await Order.findOne({ id: orderId });
+            if (!order) {
+                return res.status(404).json({ message: 'Order not found' });
+            }
+
+            const oldStatus = order.status || 'Pending';
+            const newStatus = String(status);
+
+            // Prevent changing Delivered/Rejected orders
+            if (['Delivered', 'Rejected'].includes(oldStatus) && oldStatus !== newStatus) {
+                return res.status(400).json({
+                    message: `Order is already ${oldStatus} and cannot be changed`
+                });
+            }
+
+            // Wallet-specific handling
+            if (order.payment_method === 'Wallet') {
+                const wallet = await ensureWallet(order.user_id);
+                const total = Number(order.total_price || 0);
+
+                // Approve: deduct wallet if not already done
+                if (newStatus === 'Approved' && !order.wallet_deducted) {
+                    const balance = Number(wallet.balance || 0);
+                    if (balance < total) {
+                        return res.status(400).json({
+                            message: 'Insufficient wallet balance to approve this order'
+                        });
+                    }
+
+                    wallet.balance = Number((balance - total).toFixed(2));
+                    await wallet.save();
+
+                    await WalletTransaction.create({
+                        id: await nextSequence('walletTxn'),
+                        user_id: order.user_id,
+                        type: 'debit',
+                        amount: total,
+                        reason: 'Order payment',
+                        reference_type: 'order',
+                        reference_id: order.id
+                    });
+
+                    order.wallet_deducted = 1;
+                }
+
+                // Reject: refund wallet if already deducted
+                if (newStatus === 'Rejected' && order.wallet_deducted) {
+                    wallet.balance = Number(
+                        (Number(wallet.balance || 0) + total).toFixed(2)
+                    );
+                    await wallet.save();
+
+                    await WalletTransaction.create({
+                        id: await nextSequence('walletTxn'),
+                        user_id: order.user_id,
+                        type: 'credit',
+                        amount: total,
+                        reason: 'Order refund',
+                        reference_type: 'order',
+                        reference_id: order.id
+                    });
+
+                    order.wallet_deducted = 0;
+                }
+            }
+
+            order.status = newStatus;
+            await order.save();
+
+            // Optional notification
+            try {
+                await Notification.create({
+                    id: await nextSequence('notification'),
+                    user_id: order.user_id,
+                    type: 'order_status',
+                    title: `Order #${order.id} status updated`,
+                    message: `Your order status is now: ${newStatus}`,
+                    reference_type: 'order',
+                    reference_id: order.id,
+                    is_read: 0
+                });
+            } catch (err) {
+                console.error('Failed to create order status notification:', err);
+            }
+
+            res.json({
+                message: 'Order status updated successfully',
+                order: cleanDoc(order)
+            });
+        } catch (error) {
+            console.error('Order status update error:', error);
+            res.status(500).json({
+                message: 'Error updating order status',
+                error: error.message
+            });
+        }
+    }
+);
 
 module.exports = router;
