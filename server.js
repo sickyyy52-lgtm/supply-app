@@ -10,10 +10,9 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const paymentRoutes = require('./routes/payments');
 const walletRoutes = require('./routes/wallet');
-const { validateEnv } = require('./utils/env');
+const { validateEnv, getStartupConfigSummary } = require('./utils/env');
 
 const app = express();
-const PORT = process.env.PORT;
 const uploadsDir = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
@@ -85,22 +84,90 @@ app.use((err, req, res, next) => {
     });
 });
 
+function normalizeError(error) {
+    if (error instanceof Error) return error;
+    return new Error(typeof error === 'string' ? error : JSON.stringify(error));
+}
+
+function logErrorDetails(label, error) {
+    const normalizedError = normalizeError(error);
+    console.error(`[${label}] ${normalizedError.name}: ${normalizedError.message}`);
+
+    if (normalizedError.cause) {
+        console.error(`[${label}] Cause: ${normalizedError.cause.message || normalizedError.cause}`);
+    }
+
+    if (normalizedError.stack) {
+        console.error(normalizedError.stack);
+    }
+}
+
+function logMongoStartupHints(error) {
+    const normalizedError = normalizeError(error);
+    const isMongoError = normalizedError.name.startsWith('Mongo') ||
+        normalizedError.message.toLowerCase().includes('mongodb') ||
+        Boolean(normalizedError.reason);
+
+    if (!isMongoError) return;
+
+    console.error('[startup] MongoDB connection failed before the HTTP server started.');
+    console.error('[startup] Check MONGO_URI/MONGODB_URI, database username/password, Atlas IP access list, TLS/network access, and cluster availability.');
+
+    if (normalizedError.reason && normalizedError.reason.servers instanceof Map) {
+        const servers = [...normalizedError.reason.servers.entries()]
+            .map(([host, description]) => `${host}=${description.type || 'unknown'}`)
+            .join(', ');
+
+        if (servers) {
+            console.error(`[startup] MongoDB server states: ${servers}`);
+        }
+    }
+}
+
+function logStartupConfig(config) {
+    const summary = getStartupConfigSummary(config);
+    console.log('[startup] Configuration validated.');
+    console.log(`[startup] NODE_ENV: ${summary.nodeEnv}`);
+    console.log(`[startup] PORT: ${summary.port}`);
+    console.log(`[startup] MONGO_URI: ${summary.mongoUri}`);
+    console.log(`[startup] JWT_SECRET: ${summary.jwtSecret}`);
+}
+
+function logStartupFailure(error) {
+    console.error('================ STARTUP FAILED ================');
+    logErrorDetails('startup', error);
+    logMongoStartupHints(error);
+    console.error('================================================');
+}
+
+process.on('unhandledRejection', (reason) => {
+    logErrorDetails('unhandledRejection', reason);
+});
+
+process.on('uncaughtException', (error) => {
+    logErrorDetails('uncaughtException', error);
+    process.exit(1);
+});
+
 async function startServer() {
+    let config;
+
     try {
-        validateEnv();
+        config = validateEnv();
+        logStartupConfig(config);
     } catch (error) {
-        console.error('Environment validation failed:', error.message);
-        console.error('Server not started because required configuration is missing or invalid.');
+        logStartupFailure(error);
         process.exit(1);
     }
 
     try {
-        console.log('Connecting to MongoDB...');
-        await connectDb();
-        console.log('MongoDB connected successfully.');
+        console.log('[startup] Connecting to MongoDB...');
+        await connectDb(config.mongoUri);
+        console.log('[startup] MongoDB connected and ping verified.');
+
         await new Promise((resolve, reject) => {
-            const server = app.listen(PORT, () => {
-                console.log(`Server running on http://localhost:${PORT}`);
+            const server = app.listen(config.port, () => {
+                console.log(`[startup] Server running on port ${config.port}`);
                 resolve(server);
             });
 
@@ -109,16 +176,7 @@ async function startServer() {
             });
         });
     } catch (error) {
-        if (error.name === 'MongoServerSelectionError' || error.name === 'MongooseServerSelectionError') {
-            console.error('MongoDB connection failed:', error.message);
-            console.error('Server not started because a database connection could not be established.');
-        } else if (error.code === 'EADDRINUSE') {
-            console.error(`Server startup failed: port ${PORT} is already in use.`);
-            console.error('Server not started because the configured port is unavailable.');
-        } else {
-            console.error('Server startup failed:', error.message);
-            console.error('Server not started because an unexpected startup error occurred.');
-        }
+        logStartupFailure(error);
         process.exit(1);
     }
 }
