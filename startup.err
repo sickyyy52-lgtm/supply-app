@@ -1,0 +1,347 @@
+(node:19560) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19560) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+(node:19560) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+Products fetch error: MongoServerSelectionError: getaddrinfo ENOTFOUND ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net
+    at Topology.selectServer (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\sdam\topology.js:348:38)
+    at async executeOperationWithRetries (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:157:18)
+    at async executeOperation (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async FindCursor._initialize (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\find_cursor.js:62:26)
+    at async FindCursor.cursorInit (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:654:13)
+    at async FindCursor.next (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:326:17)
+    at async [Symbol.asyncIterator] (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:254:34)
+    at async FindCursor.toArray (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:406:26)
+    at async model.Query._find (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongoose\lib\query.js:2473:14) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-02.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-00.kaf9sfa.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-hqqmyv-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000085'),
+    maxSetVersion: 74,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: getaddrinfo ENOTFOUND ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net
+      at TLSSocket.<anonymous> (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cmap\connect.js:314:44)
+      at Object.onceWrapper (node:events:623:26)
+      at TLSSocket.emit (node:events:508:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: Error: getaddrinfo ENOTFOUND ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net
+        at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+      errno: -3008,
+      code: 'ENOTFOUND',
+      syscall: 'getaddrinfo',
+      hostname: 'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net'
+    }
+  }
+}
+(node:19560) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+Products fetch error: MongoServerSelectionError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\sdam\topology.js:348:38)
+    at async executeOperationWithRetries (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:157:18)
+    at async executeOperation (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async FindCursor._initialize (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\find_cursor.js:62:26)
+    at async FindCursor.cursorInit (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:654:13)
+    at async FindCursor.next (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:326:17)
+    at async [Symbol.asyncIterator] (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:254:34)
+    at async FindCursor.toArray (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:406:26)
+    at async model.Query._find (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongoose\lib\query.js:2473:14) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-02.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-00.kaf9sfa.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-hqqmyv-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000085'),
+    maxSetVersion: 74,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cmap\connect.js:314:44)
+      at Object.onceWrapper (node:events:623:26)
+      at TLSSocket.emit (node:events:508:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Profile fetch error: MongoServerSelectionError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\sdam\topology.js:348:38)
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at listOnTimeout (node:internal/timers:567:9)
+    at process.processTimers (node:internal/timers:541:7)
+    at async executeOperationWithRetries (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:157:18)
+    at async executeOperation (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async FindCursor._initialize (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\find_cursor.js:62:26)
+    at async FindCursor.cursorInit (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:654:13)
+    at async FindCursor.next (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:326:17) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-02.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-00.kaf9sfa.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-hqqmyv-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000085'),
+    maxSetVersion: 74,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cmap\connect.js:314:44)
+      at Object.onceWrapper (node:events:623:26)
+      at TLSSocket.emit (node:events:508:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Orders fetch error: MongoServerSelectionError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\sdam\topology.js:348:38)
+    at async executeOperationWithRetries (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:157:18)
+    at async executeOperation (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async FindCursor._initialize (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\find_cursor.js:62:26)
+    at async FindCursor.cursorInit (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:654:13)
+    at async FindCursor.next (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:326:17)
+    at async [Symbol.asyncIterator] (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:254:34)
+    at async FindCursor.toArray (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:406:26)
+    at async model.Query._find (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongoose\lib\query.js:2473:14) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-02.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-00.kaf9sfa.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-hqqmyv-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000085'),
+    maxSetVersion: 74,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cmap\connect.js:314:44)
+      at Object.onceWrapper (node:events:623:26)
+      at TLSSocket.emit (node:events:508:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Signup error: MongoServerSelectionError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\sdam\topology.js:348:38)
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processTimers (node:internal/timers:538:9)
+    at async executeOperationWithRetries (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:157:18)
+    at async executeOperation (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async FindCursor._initialize (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\find_cursor.js:62:26)
+    at async FindCursor.cursorInit (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:654:13)
+    at async FindCursor.next (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:326:17)
+    at async Collection.findOne (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\collection.js:313:24) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-02.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-00.kaf9sfa.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-hqqmyv-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000085'),
+    maxSetVersion: 74,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cmap\connect.js:314:44)
+      at Object.onceWrapper (node:events:623:26)
+      at TLSSocket.emit (node:events:508:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Products fetch error: MongoServerSelectionError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\sdam\topology.js:348:38)
+    at async executeOperationWithRetries (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:157:18)
+    at async executeOperation (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async FindCursor._initialize (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\find_cursor.js:62:26)
+    at async FindCursor.cursorInit (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:654:13)
+    at async FindCursor.next (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:326:17)
+    at async [Symbol.asyncIterator] (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:254:34)
+    at async FindCursor.toArray (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:406:26)
+    at async model.Query._find (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongoose\lib\query.js:2473:14) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-02.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-00.kaf9sfa.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-hqqmyv-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000085'),
+    maxSetVersion: 74,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cmap\connect.js:314:44)
+      at Object.onceWrapper (node:events:623:26)
+      at TLSSocket.emit (node:events:508:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Login error: MongoServerSelectionError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\sdam\topology.js:348:38)
+    at async executeOperationWithRetries (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:157:18)
+    at async executeOperation (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async FindCursor._initialize (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\find_cursor.js:62:26)
+    at async FindCursor.cursorInit (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:654:13)
+    at async FindCursor.next (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cursor\abstract_cursor.js:326:17)
+    at async Collection.findOne (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\collection.js:313:24)
+    at async model.Query._findOne (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongoose\lib\query.js:2771:15)
+    at async model.Query.exec (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongoose\lib\query.js:4797:63) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-8hx6yil-shard-00-01.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-02.kaf9sfa.mongodb.net:27017' => [ServerDescription],
+      'ac-8hx6yil-shard-00-00.kaf9sfa.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-hqqmyv-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000085'),
+    maxSetVersion: 74,
+    commonWireVersion: 25,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (C:\Users\Len\OneDrive\Desktop\Supply App mk1-20260427T061057Z-3-001\Supply App mk1\node_modules\mongodb\lib\cmap\connect.js:314:44)
+      at Object.onceWrapper (node:events:623:26)
+      at TLSSocket.emit (node:events:508:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errorLabelSet: Set(3) { 'SystemOverloadedError', 'RetryableError', 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: A4650000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:openssl\ssl\record\rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}

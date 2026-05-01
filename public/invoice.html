@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice - Nexts</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        .invoice-shell {
+            width: min(900px, calc(100% - 40px));
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            padding: 32px 32px 40px;
+            color: #111827;
+            font-size: 14px;
+        }
+        
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            gap: 20px;
+        }
+        
+        .invoice-brand h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 800;
+        }
+        
+        .invoice-brand p {
+            margin: 4px 0;
+            color: #6b7280;
+        }
+        
+        .invoice-meta {
+            text-align: right;
+            font-size: 13px;
+            color: #4b5563;
+        }
+        
+        .invoice-meta strong {
+            display: block;
+            color: #111827;
+        }
+        
+        .invoice-section-title {
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        
+        .invoice-two-cols {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .invoice-box {
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+            padding: 12px 14px;
+            background: #f9fafb;
+        }
+        
+        .invoice-box p {
+            margin: 2px 0;
+        }
+        
+        .invoice-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 18px;
+        }
+        
+        .invoice-items-table th,
+        .invoice-items-table td {
+            padding: 8px 6px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+        
+        .invoice-items-table th {
+            font-weight: 700;
+            color: #6b7280;
+            background: #f9fafb;
+        }
+        
+        .invoice-items-table td.qty,
+        .invoice-items-table td.price,
+        .invoice-items-table td.total {
+            text-align: right;
+            white-space: nowrap;
+        }
+        
+        .invoice-summary {
+            margin-left: auto;
+            width: 260px;
+            font-size: 13px;
+        }
+        
+        .invoice-summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        
+        .invoice-summary-row.total {
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid #e5e7eb;
+            font-weight: 800;
+            font-size: 14px;
+        }
+        
+        .invoice-footer-note {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #6b7280;
+            border-top: 1px dashed #e5e7eb;
+            padding-top: 10px;
+        }
+        
+        .invoice-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .invoice-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        
+        .invoice-btn-primary {
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+        
+        .invoice-btn-secondary {
+            background: #f3f4f6;
+            color: #111827;
+        }
+        
+        @media print {
+            body {
+                background: #ffffff;
+            }
+            .invoice-shell {
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+                width: 100%;
+                padding: 16px 18px 24px;
+            }
+            .invoice-actions,
+            .whatsapp-support-btn,
+            .floating-cart-btn,
+            .navbar,
+            .site-footer {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="invoice-shell">
+        <div class="invoice-header">
+            <div class="invoice-brand">
+                <h1>Nexts</h1>
+                <p>Smart supply for modern businesses.</p>
+                <p style="font-size:12px; color:#9ca3af;">
+                    contact@nexts.in · 9579544462
+                </p>
+            </div>
+            <div class="invoice-meta">
+                <strong>Invoice</strong>
+                <span id="invoice-id">#–</span>
+                <span id="invoice-date">–</span>
+            </div>
+        </div>
+
+        <div class="invoice-two-cols">
+            <div>
+                <div class="invoice-section-title">Billed To</div>
+                <div class="invoice-box">
+                    <p id="invoice-customer-name">–</p>
+                    <p id="invoice-customer-phone">–</p>
+                    <p id="invoice-customer-address">–</p>
+                </div>
+            </div>
+            <div>
+                <div class="invoice-section-title">Order Details</div>
+                <div class="invoice-box">
+                    <p><strong>Payment Method:</strong> <span id="invoice-payment-method">–</span></p>
+                    <p><strong>Payment Status:</strong> <span id="invoice-payment-status">–</span></p>
+                    <p><strong>Subscription:</strong> <span id="invoice-subscription">–</span></p>
+                    <p><strong>Delivery Slot:</strong> <span id="invoice-delivery-slot">Any</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="invoice-section-title">Items</div>
+            <table class="invoice-items-table">
+                <thead>
+                    <tr>
+                        <th style="width:50%;">Item</th>
+                        <th class="qty">Qty</th>
+                        <th class="price">Price</th>
+                        <th class="total">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-items-body">
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding:16px; color:#9ca3af;">Loading items...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="invoice-summary">
+            <div class="invoice-summary-row">
+                <span>Items Total</span>
+                <span>₹<span id="invoice-subtotal">0.00</span></span>
+            </div>
+            <div class="invoice-summary-row">
+                <span>Handling</span>
+                <span>₹<span id="invoice-handling">0.00</span></span>
+            </div>
+            <div class="invoice-summary-row total">
+                <span>Total Payable</span>
+                <span>₹<span id="invoice-total">0.00</span></span>
+            </div>
+        </div>
+
+        <div class="invoice-footer-note">
+            This invoice is generated by Nexts for your business supply order. For any support or corrections, contact us on WhatsApp or email.
+        </div>
+
+        <div class="invoice-actions">
+            <button class="invoice-btn invoice-btn-secondary" id="invoice-back-btn">Back to Dashboard</button>
+            <button class="invoice-btn invoice-btn-primary" id="invoice-print-btn">Print / Download PDF</button>
+        </div>
+    </main>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/invoice.js"></script>
+</body>
+
+</html>

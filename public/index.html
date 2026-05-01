@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexts - Smart B2B Supply</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+    <div class="page-loader" id="page-loader">
+        <div class="loader-ring"></div>
+        <p>Loading Nexts...</p>
+    </div>
+
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <header class="navbar glass-nav">
+        <div class="nav-left">
+            <a href="/" class="brand">
+                <span class="brand-dot"></span>
+                <span class="brand-text">Nexts</span>
+            </a>
+        </div>
+
+        <div class="nav-center">
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Search dairy, grocery, vegetables..." />
+                <span class="search-icon">⌕</span>
+            </div>
+        </div>
+
+        <nav class="nav-right">
+            <a href="/" class="nav-link active">Home</a>
+            <a href="/menu" class="nav-link">Menu</a>
+            <a href="/dashboard" class="nav-link hidden" id="dashboard-link">Dashboard</a>
+            <a href="/cart" class="nav-link cart-nav-link">Cart <span id="cart-count">0</span></a>
+            <a href="/login" class="nav-link" id="login-link">Login</a>
+            <a href="/admin" class="nav-link hidden" id="admin-link">Admin</a>
+            <button id="logout-btn" class="nav-pill hidden">Logout</button>
+        </nav>
+    </header>
+
+    <main class="site-shell">
+        <section class="hero-section">
+            <div class="hero-content reveal">
+                <p class="eyebrow">FAST B2B PRODUCT SUPPLY</p>
+                <h1>
+                    Smart supply for
+                    <span class="gradient-text">modern businesses</span>
+                </h1>
+                <p class="hero-subtext">
+                    Dairy, vegetables, grocery and beverages delivered with speed, consistency and premium service for your daily operations.
+                </p>
+
+                <div class="hero-actions">
+                    <a href="#products" class="hero-btn primary-btn magnetic-btn">Explore Products</a>
+                    <a href="/menu" class="hero-btn secondary-btn">Browse Menu</a>
+                </div>
+
+                <div class="hero-metrics">
+                    <div class="metric-card float-card">
+                        <h3>500+</h3>
+                        <p>Retail & B2B buyers</p>
+                    </div>
+                    <div class="metric-card float-card delay-1">
+                        <h3>4</h3>
+                        <p>Core supply categories</p>
+                    </div>
+                    <div class="metric-card float-card delay-2">
+                        <h3>24/7</h3>
+                        <p>Order-ready platform</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual reveal-right">
+                <div class="hero-visual-card">
+                    <div class="hero-badge badge-top">Fresh • Reliable • Fast</div>
+
+                    <div class="hero-products-stack">
+                        <div class="floating-product product-a">
+                            <img src="/images/vegetable-basket.jpg" alt="Fresh basket" />
+                        </div>
+                        <div class="floating-product product-b">
+                            <img src="/images/milk.jpg" alt="Milk" />
+                        </div>
+                        <div class="floating-product product-c">
+                            <img src="/images/rice.jpg" alt="Rice" />
+                        </div>
+                    </div>
+
+                    <div class="hero-order-card">
+                        <div class="pulse-dot"></div>
+                        <div>
+                            <h4>Bulk supply in motion</h4>
+                            <p>Orders processed faster with Nexts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="featured-strip reveal">
+            <div class="strip-card">
+                <h4>Fresh Sourcing</h4>
+                <p>Curated supply from quality vendors</p>
+            </div>
+            <div class="strip-card">
+                <h4>Fast Delivery</h4>
+                <p>Reliable last-mile movement</p>
+            </div>
+            <div class="strip-card">
+                <h4>Bulk Friendly</h4>
+                <p>Built for restaurants, stores and kitchens</p>
+            </div>
+            <div class="strip-card">
+                <h4>Smart Ordering</h4>
+                <p>Simple digital ordering experience</p>
+            </div>
+        </section>
+
+        <section class="categories-block reveal">
+            <div class="section-head">
+                <div>
+                    <p class="section-tag">CATEGORIES</p>
+                    <h2>Browse supply essentials</h2>
+                </div>
+            </div>
+
+            <div class="categories-scroll" id="category-filters">
+                <button class="cat-btn" data-category="All">All</button>
+                <button class="cat-btn active" data-category="Dairy Products">Dairy Products</button>
+                <button class="cat-btn" data-category="Vegetables">Vegetables</button>
+                <button class="cat-btn" data-category="Grocery">Grocery</button>
+                <button class="cat-btn" data-category="Beverages">Beverages</button>
+            </div>
+        </section>
+
+        <section class="products-area" id="products">
+            <div class="section-head reveal">
+                <div>
+                    <p class="section-tag">PRODUCTS</p>
+                    <h2 id="products-heading">Popular dairy supply picks</h2>
+                </div>
+            </div>
+
+            <div id="skeleton-container" class="product-grid"></div>
+            <div id="products-container" class="product-grid hidden"></div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <div class="site-footer-brand">
+                <h3>Nexts</h3>
+                <p>Smart supply for modern businesses.</p>
+                <span class="site-footer-copyright">
+                    Fast, reliable B2B supply for dairy, groceries, vegetables and beverages.
+                </span>
+            </div>
+
+            <div class="site-footer-links">
+                <h4>Quick Links</h4>
+                <a href="/">Home</a>
+                <a href="/menu">Products</a>
+                <a href="/cart">Cart</a>
+            </div>
+
+            <div class="site-footer-contact">
+                <h4>Contact</h4>
+                <a href="mailto:contact@nexts.in">contact@nexts.in</a>
+                <a href="tel:+919579544462">9579544462</a>
+                <a href="https://wa.me/919579544462" target="_blank" rel="noopener" class="site-footer-whatsapp-link">
+                    <span class="site-footer-whatsapp-icon">💬</span> WhatsApp support
+                </a>
+            </div>
+        </div>
+
+        <div class="site-footer-bottom">
+            <p>© 2026 Nexts. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating WhatsApp support button -->
+    <a href="https://wa.me/919579544462" target="_blank" rel="noopener" class="whatsapp-support-btn">
+        <span class="whatsapp-support-icon">
+            <!-- simple WhatsApp icon (SVG) -->
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#FFFFFF"
+                      d="M16 3C9.383 3 4 8.383 4 15c0 2.43.73 4.688 1.985 6.59L4 29l7.65-1.945A11.86 11.86 0 0 0 16 27c6.617 0 12-5.383 12-12S22.617 3 16 3Zm0 2.4c5.293 0 9.6 4.307 9.6 9.6 0 5.294-4.307 9.6-9.6 9.6a9.55 9.55 0 0 1-4.858-1.344l-.347-.205-4.545 1.156 1.208-4.42-.225-.362A9.53 9.53 0 0 1 6.4 15c0-5.293 4.307-9.6 9.6-9.6Zm-3.09 4.2c-.242-.54-.497-.551-.727-.56-.188-.008-.403-.007-.619-.007s-.565.081-.862.404c-.297.322-1.133 1.107-1.133 2.7 0 1.592 1.16 3.132 1.321 3.35.163.216 2.227 3.56 5.49 4.85 2.717 1.07 3.27.856 3.86.803.59-.054 1.9-.777 2.17-1.526.27-.75.27-1.393.189-1.526-.081-.135-.297-.216-.62-.378-.323-.162-1.9-.938-2.19-1.044-.29-.108-.5-.162-.71.161-.21.323-.814 1.044-1 1.259-.188.216-.369.243-.692.081-.323-.162-1.366-.504-2.602-1.603-.962-.86-1.611-1.92-1.8-2.243-.188-.323-.02-.498.142-.66.146-.146.323-.378.485-.567.162-.189.216-.324.324-.54.108-.216.054-.405-.027-.567-.081-.162-.71-1.764-.974-2.404Z"/>
+            </svg>
+        </span>
+    </a>
+
+    <div class="floating-cart-btn" id="floating-cart-btn" onclick="window.location.href='/cart'">
+        <span>🛒</span>
+        <small id="floating-cart-count">0</small>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="success-modal hidden">
+        <div class="success-modal-backdrop"></div>
+        <div class="success-modal-card">
+            <div class="success-icon">✓</div>
+            <h3 id="success-modal-title">Success</h3>
+            <p id="success-modal-message">Your action was completed successfully.</p>
+            <button id="success-modal-btn" class="success-modal-btn">Continue</button>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+
+</html>

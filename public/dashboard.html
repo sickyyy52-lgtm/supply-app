@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexts - Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body class="dashboard-body">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+
+    <header class="navbar glass-nav">
+        <div class="nav-left">
+            <a href="/" class="brand">
+                <span class="brand-dot"></span>
+                <span class="brand-text">Nexts</span>
+            </a>
+        </div>
+
+        <div class="nav-center">
+            <div class="cart-page-title-pill">User Dashboard</div>
+        </div>
+
+        <nav class="nav-right">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/menu" class="nav-link">Menu</a>
+            <a href="/dashboard" class="nav-link active">Dashboard</a>
+            <a href="/cart" class="nav-link">Cart</a>
+            <button id="dashboard-logout-btn" class="nav-pill">Logout</button>
+        </nav>
+    </header>
+
+    <main class="dashboard-shell">
+        <section class="dashboard-hero reveal active">
+            <div>
+                <p class="section-tag">MY ACCOUNT</p>
+                <h1>Manage your profile and track your orders</h1>
+                <p>
+                    Access your business account details, update profile information, and monitor all your previous orders from one premium dashboard.
+                </p>
+            </div>
+        </section>
+
+        <section class="dashboard-top-grid">
+            <div class="dashboard-profile-card reveal active">
+                <div class="dashboard-card-head">
+                    <div>
+                        <p class="section-tag">PROFILE OVERVIEW</p>
+                        <h2 id="dash-user-name">Loading...</h2>
+                    </div>
+                </div>
+
+                <div class="profile-meta-grid">
+                    <div class="profile-meta-box">
+                        <span>Email</span>
+                        <strong id="dash-user-email">-</strong>
+                    </div>
+                    <div class="profile-meta-box">
+                        <span>Role</span>
+                        <strong id="dash-user-role">-</strong>
+                    </div>
+                    <div class="profile-meta-box">
+                        <span>Phone</span>
+                        <strong id="dash-user-phone">-</strong>
+                    </div>
+                    <div class="profile-meta-box">
+                        <span>Address</span>
+                        <strong id="dash-user-address">-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-stats-card reveal active">
+                <div class="dashboard-mini-stat">
+                    <span>Total Orders</span>
+                    <strong id="dash-total-orders">0</strong>
+                </div>
+                <div class="dashboard-mini-stat">
+                    <span>Total Spend</span>
+                    <strong>₹<span id="dash-total-spend">0.00</span></strong>
+                </div>
+                <div class="dashboard-mini-stat">
+                    <span>Account Type</span>
+                    <strong id="dash-account-type">User</strong>
+                </div>
+                <div class="dashboard-mini-stat">
+                    <span>Wallet Balance</span>
+                    <strong>₹<span id="dash-wallet-balance">0.00</span></strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-main-grid">
+            <div class="dashboard-orders-card reveal active">
+                <div class="dashboard-card-head">
+                    <div>
+                        <p class="section-tag">ORDER HISTORY</p>
+                        <h2>My Orders</h2>
+                    </div>
+                </div>
+
+                <div id="dashboard-orders" class="dashboard-orders-list"></div>
+            </div>
+
+            <div class="dashboard-edit-card reveal active">
+                <div class="dashboard-card-head">
+                    <div>
+                        <p class="section-tag">PROFILE SETTINGS</p>
+                        <h2>Edit Profile</h2>
+                    </div>
+                </div>
+
+                <form id="dashboard-profile-form" class="dashboard-profile-form">
+                    <div class="input-group">
+                        <label>Full Name</label>
+                        <input type="text" id="profile-name" placeholder="Enter your full name" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="profile-email" readonly />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="profile-phone" placeholder="Enter phone number" />
+                    </div>
+
+                    <div class="input-group">
+                        <label>Address</label>
+                        <textarea id="profile-address" placeholder="Enter your address"></textarea>
+                    </div>
+
+                    <button type="submit" class="dashboard-save-btn">Save Profile</button>
+                </form>
+
+                <hr style="margin:20px 0; border:0; border-top:1px solid #eaecf0;" />
+
+                <div>
+                    <h3 style="margin-bottom:8px;">Request Wallet Top-up</h3>
+                    <p style="margin-bottom:12px; color:#667085;">Pay manually via UPI and upload screenshot for admin approval.</p>
+                    <div id="dashboard-upi-info" style="border:1px solid #e4e7ec; border-radius:10px; padding:12px; margin-bottom:12px;">
+                        <p style="margin-bottom:6px;">UPI ID: <strong id="dashboard-upi-id">Loading...</strong></p>
+                        <img id="dashboard-upi-qr" src="" alt="UPI QR" style="max-width:220px; width:100%; border-radius:8px; display:none;" />
+                    </div>
+                    <form id="wallet-topup-form" class="dashboard-profile-form">
+                        <div class="input-group">
+                            <label>Top-up Amount</label>
+                            <input type="number" id="topup-amount" placeholder="Enter amount" min="1" step="0.01" required />
+                        </div>
+                        <div class="input-group">
+                            <label>Payment Screenshot</label>
+                            <input type="file" id="topup-screenshot" accept="image/png,image/jpeg,image/jpg,image/webp" required />
+                        </div>
+                        <button type="submit" class="dashboard-save-btn">Submit Top-up Request</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-main-grid" style="margin-top:20px;">
+            <div class="dashboard-orders-card reveal active">
+                <div class="dashboard-card-head">
+                    <div>
+                        <p class="section-tag">WALLET HISTORY</p>
+                        <h2>Recent Wallet Transactions</h2>
+                    </div>
+                </div>
+                <div id="wallet-transactions" class="dashboard-orders-list"></div>
+            </div>
+
+            <div class="dashboard-edit-card reveal active">
+                <div class="dashboard-card-head">
+                    <div>
+                        <p class="section-tag">TOP-UP REQUESTS</p>
+                        <h2>Recent Top-up Status</h2>
+                    </div>
+                </div>
+                <div id="wallet-topups" class="dashboard-orders-list"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <div class="site-footer-brand">
+                <h3>Nexts</h3>
+                <p>Smart supply for modern businesses.</p>
+                <span class="site-footer-copyright">
+                    Fast, reliable B2B supply for dairy, groceries, vegetables and beverages.
+                </span>
+            </div>
+
+            <div class="site-footer-links">
+                <h4>Quick Links</h4>
+                <a href="/">Home</a>
+                <a href="/menu">Products</a>
+                <a href="/cart">Cart</a>
+            </div>
+
+            <div class="site-footer-contact">
+                <h4>Contact</h4>
+                <a href="mailto:contact@nexts.in">contact@nexts.in</a>
+                <a href="tel:+919579544462">9579544462</a>
+                <a href="https://wa.me/919579544462" target="_blank" rel="noopener" class="site-footer-whatsapp-link">
+                    <span class="site-footer-whatsapp-icon">💬</span> WhatsApp support
+                </a>
+            </div>
+        </div>
+
+        <div class="site-footer-bottom">
+            <p>© 2026 Nexts. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating WhatsApp support button -->
+    <a href="https://wa.me/919579544462" target="_blank" rel="noopener" class="whatsapp-support-btn">
+        <span class="whatsapp-support-icon">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#FFFFFF"
+                      d="M16 3C9.383 3 4 8.383 4 15c0 2.43.73 4.688 1.985 6.59L4 29l7.65-1.945A11.86 11.86 0 0 0 16 27c6.617 0 12-5.383 12-12S22.617 3 16 3Zm0 2.4c5.293 0 9.6 4.307 9.6 9.6 0 5.294-4.307 9.6-9.6 9.6a9.55 9.55 0 0 1-4.858-1.344l-.347-.205-4.545 1.156 1.208-4.42-.225-.362A9.53 9.53 0 0 1 6.4 15c0-5.293 4.307-9.6 9.6-9.6Zm-3.09 4.2c-.242-.54-.497-.551-.727-.56-.188-.008-.403-.007-.619-.007s-.565.081-.862.404c-.297.322-1.133 1.107-1.133 2.7 0 1.592 1.16 3.132 1.321 3.35.163.216 2.227 3.56 5.49 4.85 2.717 1.07 3.27.856 3.86.803.59-.054 1.9-.777 2.17-1.526.27-.75.27-1.393.189-1.526-.081-.135-.297-.216-.62-.378-.323-.162-1.9-.938-2.19-1.044-.29-.108-.5-.162-.71.161-.21.323-.814 1.044-1 1.259-.188.216-.369.243-.692.081-.323-.162-1.366-.504-2.602-1.603-.962-.86-1.611-1.92-1.8-2.243-.188-.323-.02-.498.142-.66.146-.146.323-.378.485-.567.162-.189.216-.324.324-.54.108-.216.054-.405-.027-.567-.081-.162-.71-1.764-.974-2.404Z"/>
+            </svg>
+        </span>
+    </a>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="success-modal hidden">
+        <div class="success-modal-backdrop"></div>
+        <div class="success-modal-card">
+            <div class="success-icon">✓</div>
+            <h3 id="success-modal-title">Success</h3>
+            <p id="success-modal-message">Your action was completed successfully.</p>
+            <button id="success-modal-btn" class="success-modal-btn">Continue</button>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+
+</html>

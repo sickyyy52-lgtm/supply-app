@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexts - Advanced Admin Panel</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body class="admin-body">
+    <div class="admin-bg-shape admin-shape-1"></div>
+    <div class="admin-bg-shape admin-shape-2"></div>
+
+    <header class="navbar glass-nav">
+        <div class="nav-left">
+            <a href="/" class="brand">
+                <span class="brand-dot"></span>
+                <span class="brand-text">Nexts</span>
+            </a>
+        </div>
+
+        <div class="nav-center">
+            <div class="cart-page-title-pill">Advanced Admin Panel</div>
+        </div>
+
+        <nav class="nav-right">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/menu" class="nav-link">Menu</a>
+            <a href="/dashboard" class="nav-link">Dashboard</a>
+            <a href="/admin" class="nav-link active">Admin</a>
+            <button id="admin-logout-btn" class="nav-pill">Logout</button>
+        </nav>
+    </header>
+
+    <main class="admin-shell">
+        <section class="admin-hero reveal active">
+            <div>
+                <p class="section-tag">CONTROL CENTER</p>
+                <h1>Manage users, products and orders like a real platform</h1>
+                <p>
+                    Full admin control for user access, product catalog and complete order lifecycle.
+                </p>
+            </div>
+
+            <div class="admin-hero-badge">
+                <span>⚙</span>
+                <div>
+                    <strong>Live Admin Access</strong>
+                    <small>Control operations in one place</small>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-stats-grid">
+            <div class="admin-stat-card">
+                <p>Total Users</p>
+                <h3 id="stat-users">0</h3>
+            </div>
+            <div class="admin-stat-card">
+                <p>Total Products</p>
+                <h3 id="stat-products">0</h3>
+            </div>
+            <div class="admin-stat-card">
+                <p>Total Orders</p>
+                <h3 id="stat-orders">0</h3>
+            </div>
+            <div class="admin-stat-card">
+                <p>Total Revenue</p>
+                <h3>₹<span id="stat-revenue">0.00</span></h3>
+            </div>
+        </section>
+
+        <section class="admin-tabs">
+            <button class="admin-tab-btn active" data-tab="overview-tab">Overview</button>
+            <button class="admin-tab-btn" data-tab="products-tab">Products</button>
+            <button class="admin-tab-btn" data-tab="orders-tab">Orders</button>
+            <button class="admin-tab-btn" data-tab="users-tab">Users</button>
+        </section>
+
+        <section id="overview-tab" class="admin-tab-content active">
+            <div class="admin-overview-grid">
+                <div class="admin-overview-card">
+                    <h3>Pending Orders</h3>
+                    <p id="pending-orders-count">0</p>
+                </div>
+                <div class="admin-overview-card">
+                    <h3>Approved Orders</h3>
+                    <p id="approved-orders-count">0</p>
+                </div>
+                <div class="admin-overview-card">
+                    <h3>Delivered Orders</h3>
+                    <p id="delivered-orders-count">0</p>
+                </div>
+                <div class="admin-overview-card">
+                    <h3>Categories</h3>
+                    <p id="category-count">0</p>
+                </div>
+            </div>
+
+            <div class="admin-phase3-grid">
+                <div class="admin-phase3-card">
+                    <div class="admin-card-head">
+                        <div>
+                            <p class="section-tag">LOW STOCK ALERT</p>
+                            <h2>Low Stock Products</h2>
+                        </div>
+                    </div>
+                    <div id="low-stock-list" class="admin-mini-list"></div>
+                </div>
+
+                <div class="admin-phase3-card">
+                    <div class="admin-card-head">
+                        <div>
+                            <p class="section-tag">TOP CUSTOMERS</p>
+                            <h2>Top Buyers</h2>
+                        </div>
+                    </div>
+                    <div id="top-customers-list" class="admin-mini-list"></div>
+                </div>
+
+                <div class="admin-phase3-card">
+                    <div class="admin-card-head">
+                        <div>
+                            <p class="section-tag">EXPORT DATA</p>
+                            <h2>Quick Export</h2>
+                        </div>
+                    </div>
+
+                    <div class="admin-export-actions">
+                        <button id="export-products-btn" class="admin-btn quick-status-btn">Export Products CSV</button>
+                        <button id="export-orders-btn" class="admin-btn quick-status-btn">Export Orders CSV</button>
+                        <button id="export-users-btn" class="admin-btn quick-status-btn">Export Users CSV</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-phase3-grid" style="margin-top:18px;">
+                <div class="admin-phase3-card">
+                    <div class="admin-card-head">
+                        <div>
+                            <p class="section-tag">PAYMENT CONFIG</p>
+                            <h2>UPI QR & ID</h2>
+                        </div>
+                    </div>
+                    <form id="payment-config-form" class="admin-product-form">
+                        <div class="input-group">
+                            <label>UPI ID</label>
+                            <input type="text" id="admin-upi-id" placeholder="merchant@upi" required />
+                        </div>
+                        <div class="input-group">
+                            <label>QR Image Upload</label>
+                            <input type="file" id="admin-upi-qr-file" accept="image/png,image/jpeg,image/jpg,image/webp" />
+                        </div>
+                        <div id="admin-current-qr-wrap" style="margin-bottom:10px;"></div>
+                        <button type="submit" class="admin-submit-btn">Update Payment Config</button>
+                    </form>
+                </div>
+
+                <div class="admin-phase3-card">
+                    <div class="admin-card-head">
+                        <div>
+                            <p class="section-tag">ORDER PAYMENTS</p>
+                            <h2>Pending Proof Reviews</h2>
+                        </div>
+                    </div>
+                    <div id="pending-order-proofs" class="admin-mini-list"></div>
+                </div>
+
+                <div class="admin-phase3-card">
+                    <div class="admin-card-head">
+                        <div>
+                            <p class="section-tag">WALLET TOPUPS</p>
+                            <h2>Pending Top-up Requests</h2>
+                        </div>
+                    </div>
+                    <div id="pending-wallet-topups" class="admin-mini-list"></div>
+                    <p style="margin-top:10px; color:#667085; font-size:13px;">
+                        Approve top-ups to automatically credit the user’s wallet. No need to enter user ID manually.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="products-tab" class="admin-tab-content">
+            <div class="admin-form-card">
+                <div class="admin-card-head">
+                    <div>
+                        <p class="section-tag">PRODUCT FORM</p>
+                        <h2>Add / Edit Product</h2>
+                    </div>
+                </div>
+
+                <form id="product-form" class="admin-product-form" enctype="multipart/form-data">
+                    <input type="hidden" id="product-id" name="productId" />
+
+                    <div class="input-group">
+                        <label>Product Name</label>
+                        <input type="text" id="name" name="name" placeholder="Enter product name" required />
+                    </div>
+
+                    <div class="admin-form-grid">
+                        <div class="input-group">
+                            <label>Category</label>
+                            <input type="text" id="category" name="category" placeholder="e.g. Dairy Products" required />
+                        </div>
+
+                        <div class="input-group">
+                            <label>Price</label>
+                            <input type="number" id="price" name="price" placeholder="Enter price" required />
+                        </div>
+
+                        <div class="input-group">
+                            <label>Stock</label>
+                            <input type="number" id="stock" name="stock" placeholder="Enter stock quantity" required />
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Product Image</label>
+                        <input type="file" id="image" name="image" accept="image/*" />
+                        <small id="product-image-help">Select an image file to upload.</small>
+                        <div id="product-image-preview" style="margin-top:10px;"></div>
+                    </div>
+
+                    <button type="submit" class="admin-submit-btn">Save Product</button>
+                </form>
+            </div>
+
+            <div class="admin-products-card">
+                <div class="admin-card-head admin-card-head-space">
+                    <div>
+                        <p class="section-tag">CATALOG</p>
+                        <h2>Manage Products</h2>
+                    </div>
+
+                    <div class="admin-filters-row">
+                        <input type="text" id="admin-product-search" class="admin-search-input" placeholder="Search products..." />
+                        <select id="stock-filter" class="admin-search-input">
+                            <option value="All">All Stock</option>
+                            <option value="Low">Low Stock</option>
+                            <option value="In">In Stock</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="admin-products" class="admin-products-grid"></div>
+            </div>
+        </section>
+
+        <section id="orders-tab" class="admin-tab-content">
+            <div class="admin-orders-card">
+                <div class="admin-card-head admin-card-head-space">
+                    <div>
+                        <p class="section-tag">ORDERS</p>
+                        <h2>Manage Orders</h2>
+                    </div>
+
+                    <div class="admin-filters-row">
+                        <input type="text" id="order-search-input" class="admin-search-input" placeholder="Search by name / phone..." />
+                        <select id="order-status-filter" class="admin-search-input">
+                            <option value="All">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Packed">Packed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="admin-orders" class="admin-orders-list"></div>
+            </div>
+        </section>
+
+        <section id="users-tab" class="admin-tab-content">
+            <div class="admin-users-card">
+                <div class="admin-card-head admin-card-head-space">
+                    <div>
+                        <p class="section-tag">USERS</p>
+                        <h2>Manage Users</h2>
+                    </div>
+                    <input type="text" id="admin-user-search" class="admin-search-input" placeholder="Search users..." />
+                </div>
+
+                <div id="admin-users" class="admin-users-list"></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="success-modal hidden">
+        <div class="success-modal-backdrop"></div>
+        <div class="success-modal-card">
+            <div class="success-icon">✓</div>
+            <h3 id="success-modal-title">Success</h3>
+            <p id="success-modal-message">Your action was completed successfully.</p>
+            <button id="success-modal-btn" class="success-modal-btn">Continue</button>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/admin.js"></script>
+</body>
+
+</html>
