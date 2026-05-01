@@ -10,6 +10,10 @@ const { cleanDoc, cleanDocs } = require('../utils/format');
 const router = express.Router();
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadsDir);
@@ -96,7 +100,11 @@ function deleteUploadedFile(imageUrl) {
     }
 }
 
-router.get('/', async (req, res) => {
+/**
+ * GET /api/products
+ * Return all products
+ */
+router.get('/', async(req, res) => {
     try {
         const products = await Product.find({}).sort({ id: -1 });
         res.json(cleanDocs(products));
@@ -109,16 +117,20 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.post('/', authMiddleware, adminMiddleware, upload.single('image'), async (req, res) => {
+/**
+ * POST /api/products
+ * Add new product (image required)
+ */
+router.post('/', authMiddleware, adminMiddleware, upload.single('image'), async(req, res) => {
     try {
-        console.log('REQ BODY:', req.body);
-        console.log('REQ FILE:', req.file);
-        console.log('REQ CONTENT-TYPE:', req.headers['content-type']);
+        console.log('ADD PRODUCT BODY:', req.body);
+        console.log('ADD PRODUCT FILE:', req.file);
 
         const { name, category } = req.body || {};
         const price = parsePrice(req.body ? req.body.price : undefined);
         const stock = parseStock(req.body ? req.body.stock : undefined);
         const image = imageUrlForFile(req.file);
+
         const validationError = validateProductFields({
             name,
             category,
@@ -147,6 +159,9 @@ router.post('/', authMiddleware, adminMiddleware, upload.single('image'), async 
         res.json({ message: 'Product added successfully', product: cleanDoc(product) });
     } catch (error) {
         console.error('Product add error:', error);
+        if (req.file) {
+            deleteUploadedFile(imageUrlForFile(req.file));
+        }
         res.status(500).json({
             message: 'Error adding product',
             error: error.message
@@ -154,16 +169,34 @@ router.post('/', authMiddleware, adminMiddleware, upload.single('image'), async 
     }
 });
 
-router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), async (req, res) => {
-    try {
-        console.log('REQ BODY:', req.body);
-        console.log('REQ FILE:', req.file);
-        console.log('REQ CONTENT-TYPE:', req.headers['content-type']);
+/**
+ * PUT /api/products/:id
+ * Update product
+ * - If new image is uploaded: replace old
+ * - If no new image: keep old image (stable)
+ */
+router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), async(req, res) => {
+    const productId = Number(req.params.id);
 
-        const { name, category, existingImage } = req.body || {};
+    try {
+        console.log('UPDATE PRODUCT BODY:', req.body);
+        console.log('UPDATE PRODUCT FILE:', req.file);
+
+        const { name, category } = req.body || {};
         const price = parsePrice(req.body ? req.body.price : undefined);
         const stock = parseStock(req.body ? req.body.stock : undefined);
-        const image = req.file ? imageUrlForFile(req.file) : String(existingImage || '').trim();
+
+        const existingProduct = await Product.findOne({ id: productId });
+        if (!existingProduct) {
+            if (req.file) {
+                deleteUploadedFile(imageUrlForFile(req.file));
+            }
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Image logic: if new file, use it; otherwise keep existing image
+        const image = req.file ? imageUrlForFile(req.file) : existingProduct.image;
+
         const validationError = validateProductFields({
             name,
             category,
@@ -174,36 +207,25 @@ router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), asyn
 
         if (validationError) {
             if (req.file) {
-                deleteUploadedFile(image);
+                deleteUploadedFile(imageUrlForFile(req.file));
             }
             return res.status(400).json({ message: validationError });
         }
 
-        const existingProduct = await Product.findOne({ id: Number(req.params.id) });
-        if (!existingProduct) {
-            if (req.file) {
-                deleteUploadedFile(image);
-            }
-            return res.status(404).json({ message: 'Product not found' });
-        }
+        const updated = await Product.findOneAndUpdate({ id: productId }, {
+            name: String(name).trim(),
+            category: String(category).trim(),
+            price,
+            image: String(image).trim(),
+            stock
+        }, { new: true });
 
-        const product = await Product.findOneAndUpdate(
-            { id: Number(req.params.id) },
-            {
-                name: String(name).trim(),
-                category: String(category).trim(),
-                price,
-                image: String(image).trim(),
-                stock
-            },
-            { new: true }
-        );
-
+        // if new file uploaded, delete old one
         if (req.file && existingProduct.image && existingProduct.image !== image) {
             deleteUploadedFile(existingProduct.image);
         }
 
-        res.json({ message: 'Product updated successfully', product: cleanDoc(product) });
+        res.json({ message: 'Product updated successfully', product: cleanDoc(updated) });
     } catch (error) {
         if (req.file) {
             deleteUploadedFile(imageUrlForFile(req.file));
@@ -216,7 +238,10 @@ router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), asyn
     }
 });
 
-router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+/**
+ * DELETE /api/products/:id
+ */
+router.delete('/:id', authMiddleware, adminMiddleware, async(req, res) => {
     try {
         const product = await Product.findOneAndDelete({ id: Number(req.params.id) });
 
@@ -236,9 +261,13 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
     }
 });
 
+// Multer error handler
 router.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
-        return res.status(400).json({ message: error.code === 'LIMIT_FILE_SIZE' ? 'Image must be 5MB or smaller' : error.message });
+        return res.status(400).json({
+            message: error.code === 'LIMIT_FILE_SIZE' ?
+                'Image must be 5MB or smaller' : error.message
+        });
     }
 
     if (error && error.message === 'Only image uploads are allowed') {
