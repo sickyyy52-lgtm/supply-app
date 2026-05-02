@@ -57,11 +57,15 @@ const adminUpiQrFileInput = document.getElementById('admin-upi-qr-file');
 const adminCurrentQrWrap = document.getElementById('admin-current-qr-wrap');
 const pendingOrderProofsContainer = document.getElementById('pending-order-proofs');
 const pendingWalletTopupsContainer = document.getElementById('pending-wallet-topups');
+const passwordResetRequestsContainer = document.getElementById('password-reset-requests');
+const refreshPasswordResetsBtn = document.getElementById('refresh-password-resets-btn');
 
 let allProducts = [];
 let allOrders = [];
 let allUsers = [];
+let allPasswordResetRequests = [];
 let currentProductImageUrl = '';
+let latestApprovedResetPassword = null;
 
 async function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -70,6 +74,21 @@ async function fileToBase64(file) {
         reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(file);
     });
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[char]));
+}
+
+function formatDateTime(value) {
+    if (!value) return '-';
+    return new Date(value).toLocaleString();
 }
 
 if (adminLogoutBtn) {
@@ -396,6 +415,157 @@ function renderUsers(users) {
             updateUserRole(select.dataset.id, select.value);
         });
     });
+}
+
+function renderPasswordResetRequests(requests) {
+    if (!passwordResetRequestsContainer) return;
+
+    passwordResetRequestsContainer.innerHTML = '';
+
+    if (!requests.length) {
+        passwordResetRequestsContainer.innerHTML = '<div class="admin-empty-state">No password reset requests.</div>';
+        return;
+    }
+
+    requests.forEach(request => {
+        const user = request.userId || {};
+        const requestId = request._id;
+        const status = request.status || 'pending';
+        const latestPasswordHtml = latestApprovedResetPassword && latestApprovedResetPassword.id === requestId ?
+            `
+                <div class="password-reset-result">
+                    <strong>New password:</strong>
+                    <code>${escapeHtml(latestApprovedResetPassword.password)}</code>
+                    <small>Share this manually with the user. It is not stored.</small>
+                </div>
+            ` :
+            '';
+
+        const actionHtml = status === 'pending' ?
+            `
+                <div class="admin-order-quick-actions">
+                    <button class="admin-btn quick-status-btn reset-approve-btn" data-id="${requestId}">Approve</button>
+                    <button class="admin-btn delete-btn reset-reject-btn" data-id="${requestId}">Reject</button>
+                </div>
+            ` :
+            '';
+
+        const card = document.createElement('div');
+        card.className = 'admin-order-card password-reset-card';
+        card.innerHTML = `
+            <div class="admin-order-top">
+                <h3>${escapeHtml(user.name || 'User')}</h3>
+                <span class="reset-status-badge status-${escapeHtml(status)}">${escapeHtml(status)}</span>
+            </div>
+
+            <div class="admin-order-meta">
+                <p><strong>Email:</strong> ${escapeHtml(request.email || user.email || '-')}</p>
+                <p><strong>Phone:</strong> ${escapeHtml(request.phone || user.phone || '-')}</p>
+                <p><strong>Note:</strong> ${escapeHtml(request.note || '-')}</p>
+                <p><strong>Admin Note:</strong> ${escapeHtml(request.adminNote || '-')}</p>
+                <p><strong>Created:</strong> ${escapeHtml(formatDateTime(request.createdAt))}</p>
+            </div>
+
+            ${latestPasswordHtml}
+            ${actionHtml}
+        `;
+
+        passwordResetRequestsContainer.appendChild(card);
+    });
+
+    passwordResetRequestsContainer.querySelectorAll('.reset-approve-btn').forEach(btn => {
+        btn.addEventListener('click', () => approvePasswordResetRequest(btn.dataset.id));
+    });
+
+    passwordResetRequestsContainer.querySelectorAll('.reset-reject-btn').forEach(btn => {
+        btn.addEventListener('click', () => rejectPasswordResetRequest(btn.dataset.id));
+    });
+}
+
+async function fetchPasswordResetRequests() {
+    if (!passwordResetRequestsContainer) return;
+
+    try {
+        const res = await fetch('/api/admin/password-reset-requests', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await parseResponse(res);
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch password reset requests');
+
+        allPasswordResetRequests = Array.isArray(data) ? data : [];
+        renderPasswordResetRequests(allPasswordResetRequests);
+    } catch (error) {
+        passwordResetRequestsContainer.innerHTML = `<div class="admin-empty-state">${escapeHtml(error.message || 'Failed to load password reset requests')}</div>`;
+    }
+}
+
+async function approvePasswordResetRequest(requestId) {
+    const customPassword = prompt('Enter a custom password with at least 8 characters, or leave blank to auto-generate:') || '';
+    const note = prompt('Optional admin note for this approval:') || '';
+    const payload = {};
+
+    if (customPassword.trim()) {
+        if (customPassword.trim().length < 8) {
+            if (window.NextsUI) window.NextsUI.showToast('Custom password must be at least 8 characters', 'error');
+            return;
+        }
+        payload.password = customPassword.trim();
+    }
+
+    if (note.trim()) payload.note = note.trim();
+
+    try {
+        const res = await fetch(`/api/admin/password-reset-requests/${requestId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await parseResponse(res);
+        if (!res.ok) throw new Error(data.message || 'Failed to approve password reset');
+
+        latestApprovedResetPassword = {
+            id: requestId,
+            password: data.password
+        };
+
+        if (window.NextsUI) window.NextsUI.showToast('Password reset approved', 'success');
+        fetchPasswordResetRequests();
+    } catch (error) {
+        if (window.NextsUI) window.NextsUI.showToast(error.message || 'Failed to approve password reset', 'error');
+    }
+}
+
+async function rejectPasswordResetRequest(requestId) {
+    const note = prompt('Optional rejection note:') || '';
+
+    try {
+        const res = await fetch(`/api/admin/password-reset-requests/${requestId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ note: note.trim() })
+        });
+        const data = await parseResponse(res);
+        if (!res.ok) throw new Error(data.message || 'Failed to reject password reset');
+
+        if (latestApprovedResetPassword && latestApprovedResetPassword.id === requestId) {
+            latestApprovedResetPassword = null;
+        }
+
+        if (window.NextsUI) window.NextsUI.showToast('Password reset rejected', 'success');
+        fetchPasswordResetRequests();
+    } catch (error) {
+        if (window.NextsUI) window.NextsUI.showToast(error.message || 'Failed to reject password reset', 'error');
+    }
+}
+
+if (refreshPasswordResetsBtn) {
+    refreshPasswordResetsBtn.addEventListener('click', fetchPasswordResetRequests);
 }
 
 async function fetchProducts() {
@@ -1016,3 +1186,4 @@ fetchUsers();
 fetchPaymentConfig();
 fetchPendingOrderProofs();
 fetchPendingWalletTopups();
+fetchPasswordResetRequests();

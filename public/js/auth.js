@@ -7,6 +7,14 @@ const authMessage = document.getElementById('auth-message');
 const overlaySignupBtn = document.getElementById('overlay-signup-btn');
 const overlayLoginBtn = document.getElementById('overlay-login-btn');
 const authPageLoader = document.getElementById('auth-page-loader');
+const forgotPasswordBtn = document.getElementById('forgot-password-btn');
+const passwordResetModal = document.getElementById('password-reset-modal');
+const passwordResetBackdrop = document.getElementById('password-reset-backdrop');
+const passwordResetCancel = document.getElementById('password-reset-cancel');
+const passwordResetForm = document.getElementById('password-reset-form');
+const passwordResetMessage = document.getElementById('password-reset-message');
+const passwordResetIdentifier = document.getElementById('password-reset-identifier');
+const passwordResetNote = document.getElementById('password-reset-note');
 
 window.addEventListener('load', () => {
     setTimeout(() => {
@@ -34,6 +42,32 @@ showLogin.addEventListener('click', activateLoginMode);
 showSignup.addEventListener('click', activateSignupMode);
 overlaySignupBtn.addEventListener('click', activateSignupMode);
 overlayLoginBtn.addEventListener('click', activateLoginMode);
+
+function openPasswordResetModal() {
+    if (!passwordResetModal) return;
+    passwordResetModal.classList.remove('hidden');
+    if (passwordResetMessage) passwordResetMessage.textContent = '';
+    if (passwordResetIdentifier) passwordResetIdentifier.focus();
+}
+
+function closePasswordResetModal() {
+    if (!passwordResetModal) return;
+    passwordResetModal.classList.add('hidden');
+    if (passwordResetForm) passwordResetForm.reset();
+    if (passwordResetMessage) passwordResetMessage.textContent = '';
+}
+
+if (forgotPasswordBtn) {
+    forgotPasswordBtn.addEventListener('click', openPasswordResetModal);
+}
+
+if (passwordResetCancel) {
+    passwordResetCancel.addEventListener('click', closePasswordResetModal);
+}
+
+if (passwordResetBackdrop) {
+    passwordResetBackdrop.addEventListener('click', closePasswordResetModal);
+}
 
 loginForm.addEventListener('submit', async(e) => {
     e.preventDefault();
@@ -83,6 +117,49 @@ loginForm.addEventListener('submit', async(e) => {
         }
     }
 });
+
+if (passwordResetForm) {
+    passwordResetForm.addEventListener('submit', async(e) => {
+        e.preventDefault();
+
+        const identifier = passwordResetIdentifier.value.trim();
+        const note = passwordResetNote.value.trim();
+
+        if (!identifier) {
+            passwordResetMessage.textContent = 'Email or phone is required.';
+            return;
+        }
+
+        passwordResetMessage.textContent = 'Submitting request...';
+
+        try {
+            const res = await fetch('/api/auth/request-password-reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, note })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || 'Failed to submit request');
+            }
+
+            passwordResetMessage.textContent = 'Request submitted. Admin will contact you.';
+            passwordResetForm.reset();
+
+            if (window.NextsUI) {
+                window.NextsUI.showToast('Request submitted. Admin will contact you.', 'success');
+            }
+        } catch (error) {
+            passwordResetMessage.textContent = error.message || 'Server error. Please try again.';
+
+            if (window.NextsUI) {
+                window.NextsUI.showToast(error.message || 'Server error. Please try again.', 'error');
+            }
+        }
+    });
+}
 
 signupForm.addEventListener('submit', async(e) => {
     e.preventDefault();

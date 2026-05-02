@@ -10,6 +10,7 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const paymentRoutes = require('./routes/payments');
 const walletRoutes = require('./routes/wallet');
+const adminRoutes = require('./routes/admin');
 const { validateEnv, getStartupConfigSummary } = require('./utils/env');
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Static serving
 app.use('/uploads', express.static(uploadsDir)); // uploaded images

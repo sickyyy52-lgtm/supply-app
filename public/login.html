@@ -165,7 +165,7 @@
             <div class="site-footer-brand">
                 <h3>Nexts</h3>
                 <p>Smart supply for modern businesses.</p>
-                <span class="site-footeropyright">
+                <span class="site-footer-copyright">
           Fast, reliable B2B supply for dairy, groceries, vegetables and beverages.
         </span>
             </div>
@@ -203,6 +203,31 @@
     </a>
 
     <div id="toast-container" class="toast-container"></div>
+
+    <div id="password-reset-modal" class="success-modal hidden" role="dialog" aria-modal="true" aria-labelledby="password-reset-title">
+        <div class="success-modal-backdrop" id="password-reset-backdrop"></div>
+        <div class="success-modal-card auth-reset-modal-card">
+            <h3 id="password-reset-title">Request Password Reset</h3>
+            <p>Enter your account email or phone number. Admin will review the request and contact you manually.</p>
+
+            <form id="password-reset-form" class="auth-form">
+                <div class="input-group">
+                    <label>Email or Phone</label>
+                    <input type="text" id="password-reset-identifier" placeholder="you@example.com or phone number" required />
+                </div>
+
+                <div class="input-group">
+                    <label>Optional Note</label>
+                    <textarea id="password-reset-note" placeholder="Add any helpful context for admin"></textarea>
+                </div>
+
+                <button type="submit" class="auth-action-btn">Submit Request</button>
+                <button type="button" class="overlay-btn reset-cancel-btn" id="password-reset-cancel">Cancel</button>
+            </form>
+
+            <p id="password-reset-message" class="auth-message"></p>
+        </div>
+    </div>
 
     <div id="success-modal" class="success-modal hidden">
         <div class="success-modal-backdrop"></div>

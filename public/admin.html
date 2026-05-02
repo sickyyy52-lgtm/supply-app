@@ -76,6 +76,7 @@
             <button class="admin-tab-btn" data-tab="products-tab">Products</button>
             <button class="admin-tab-btn" data-tab="orders-tab">Orders</button>
             <button class="admin-tab-btn" data-tab="users-tab">Users</button>
+            <button class="admin-tab-btn" data-tab="password-resets-tab">Password Resets</button>
         </section>
 
         <section id="overview-tab" class="admin-tab-content active">
@@ -286,6 +287,20 @@
                 </div>
 
                 <div id="admin-users" class="admin-users-list"></div>
+            </div>
+        </section>
+
+        <section id="password-resets-tab" class="admin-tab-content">
+            <div class="admin-users-card">
+                <div class="admin-card-head admin-card-head-space">
+                    <div>
+                        <p class="section-tag">MANUAL RECOVERY</p>
+                        <h2>Password Reset Requests</h2>
+                    </div>
+                    <button id="refresh-password-resets-btn" class="admin-btn quick-status-btn">Refresh Requests</button>
+                </div>
+
+                <div id="password-reset-requests" class="admin-users-list"></div>
             </div>
         </section>
     </main>

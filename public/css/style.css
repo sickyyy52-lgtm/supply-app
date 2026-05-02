@@ -1354,6 +1354,39 @@ body {
     color: var(--accent);
 }
 
+.auth-extra-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -6px;
+}
+
+.auth-link-btn {
+    border: none;
+    background: transparent;
+    color: #0a0a0a;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: underline;
+    min-height: 36px;
+    padding: 4px 0;
+}
+
+.auth-reset-modal-card {
+    text-align: left;
+}
+
+.auth-reset-modal-card h3,
+.auth-reset-modal-card>p {
+    text-align: center;
+}
+
+.reset-cancel-btn {
+    width: 100%;
+    color: #0a0a0a;
+    background: #f4f4f4;
+    border-color: #e5e5e5;
+}
+
 .auth-overlay-panel {
     position: absolute;
     top: 0;
@@ -2813,6 +2846,49 @@ body {
 .quick-status-btn:hover {
     background: #0a0a0a;
     color: #ffffff;
+}
+
+.reset-status-badge {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.status-pending,
+.status-rejected {
+    background: #f4f4f4;
+    color: #0a0a0a;
+    box-shadow: inset 0 0 0 1px #e5e5e5;
+}
+
+.status-approved {
+    background: #0a0a0a;
+    color: #ffffff;
+}
+
+.password-reset-result {
+    display: grid;
+    gap: 6px;
+    margin: 14px 0;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: #f4f4f4;
+    border: 1px solid #e5e5e5;
+}
+
+.password-reset-result code {
+    color: #0a0a0a;
+    font-size: 20px;
+    font-weight: 900;
+    word-break: break-all;
+}
+
+.password-reset-result small {
+    color: #444444;
+    font-weight: 700;
 }
 
 @media (max-width: 768px) {
