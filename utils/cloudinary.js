@@ -1,10 +1,20 @@
+const cloudinaryUrlEnvKey = ['CLOUDINARY', 'URL'].join('_');
+delete process.env[cloudinaryUrlEnvKey];
+
 const cloudinary = require('cloudinary').v2;
+
+if (!process.env.CLOUDINARY_CLOUD_NAME ||
+    !process.env.CLOUDINARY_API_KEY ||
+    !process.env.CLOUDINARY_API_SECRET) {
+    console.error('Missing Cloudinary environment variables');
+    console.error('Required: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET');
+    process.exit(1);
+}
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 function isCloudinaryConfigured() {
