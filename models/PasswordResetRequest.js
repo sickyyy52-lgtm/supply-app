@@ -1,14 +1,39 @@
-const mongoose = require('mongoose');
+const { mongoose } = require('./db');
 
 const passwordResetRequestSchema = new mongoose.Schema({
-    id: { type: Number, unique: true }, // Counter se unique numeric id
-    user_id: { type: Number, required: true },
-    email: { type: String },
-    phone: { type: String },
-    note: { type: String }, // user ka message
-    status: { type: String, default: 'pending' }, // pending / approved / rejected
-    admin_note: { type: String },
-    temp_password_set: { type: Boolean, default: false }
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+        index: true
+    },
+    email: {
+        type: String,
+        default: '',
+        lowercase: true,
+        trim: true
+    },
+    phone: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    note: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    adminNote: {
+        type: String,
+        default: '',
+        trim: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
+        index: true
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('PasswordResetRequest', passwordResetRequestSchema);

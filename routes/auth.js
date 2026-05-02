@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
 const Notification = require('../models/Notification');
-const PasswordResetRequest = require('../models/PasswordResetRequest'); // NEW
+const PasswordResetRequest = require('../models/PasswordResetRequest');
 const { nextSequence } = require('../models/Counter');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const { cleanDoc, cleanDocs } = require('../utils/format');
@@ -205,158 +205,83 @@ router.put('/profile', authMiddleware, async(req, res) => {
     }
 });
 
-// ========== USER: PASSWORD RESET REQUEST (FORGOT) ==========
-router.post('/password-reset-requests', async(req, res) => {
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findUserByEmailOrPhone(identifier) {
+    const rawIdentifier = String(identifier || '').trim();
+    const normalizedEmail = rawIdentifier.toLowerCase();
+    const phoneDigits = rawIdentifier.replace(/\D/g, '');
+    const phoneQueries = [];
+
+    if (rawIdentifier) {
+        phoneQueries.push({ phone: rawIdentifier });
+    }
+
+    if (phoneDigits) {
+        phoneQueries.push({ phone: phoneDigits });
+        phoneQueries.push({ phone: new RegExp(escapeRegExp(phoneDigits), 'i') });
+    }
+
+    return User.findOne({
+        $or: [
+            { email: normalizedEmail },
+            ...phoneQueries
+        ]
+    });
+}
+
+// ========== USER: PASSWORD RESET REQUEST ==========
+router.post('/request-password-reset', async(req, res) => {
     try {
-        const { identifier, note } = req.body || {};
-        if (!identifier || !String(identifier).trim()) {
+        const { email, phone, identifier, note } = req.body || {};
+        const lookupValue = String(email || phone || identifier || '').trim();
+
+        if (!lookupValue) {
             return res
                 .status(400)
                 .json({ message: 'Email or phone is required' });
         }
 
-        const idValue = String(identifier).trim().toLowerCase();
+        const user = await findUserByEmailOrPhone(lookupValue);
+        const genericMessage = 'Request submitted. Admin will contact you.';
 
-        const user = await User.findOne({
-            $or: [
-                { email: idValue },
-                { phone: idValue },
-                { phone: new RegExp(idValue.replace(/[^0-9]/g, ''), 'i') }
-            ]
-        });
-
-        // Security: user exist hai ya nahi, generic response
         if (!user) {
             return res.json({
-                message: 'If this account exists, the admin will contact you for password reset.'
+                message: genericMessage
             });
         }
 
-        // existing pending request?
         const existingPending = await PasswordResetRequest.findOne({
-            user_id: user.id,
+            userId: user._id,
             status: 'pending'
         });
+
         if (existingPending) {
             return res.json({
-                message: 'A password reset request is already pending. Admin will contact you soon.'
+                message: genericMessage
             });
         }
 
-        const reqDoc = await PasswordResetRequest.create({
-            id: await nextSequence('passwordReset'),
-            user_id: user.id,
+        await PasswordResetRequest.create({
+            userId: user._id,
             email: user.email,
             phone: user.phone || '',
-            note: note || '',
+            note: note ? String(note).trim() : '',
             status: 'pending'
         });
 
         res.json({
-            message: 'Request submitted. Admin will contact you with new access details.',
-            requestId: reqDoc.id
+            message: genericMessage
         });
-    } catch (err) {
-        console.error('Password reset request error:', err);
+    } catch (error) {
+        console.error('Password reset request error:', error);
         res
             .status(500)
-            .json({ message: 'Error submitting request' });
+            .json({ message: 'Error submitting password reset request', error: error.message });
     }
 });
-
-// ========== ADMIN: LIST RESET REQUESTS ==========
-router.get(
-    '/password-reset-requests',
-    authMiddleware,
-    adminMiddleware,
-    async(req, res) => {
-        try {
-            const requests = await PasswordResetRequest.find({}).sort({
-                createdAt: -1
-            });
-            res.json(cleanDocs(requests));
-        } catch (err) {
-            console.error('Fetch reset requests error:', err);
-            res.status(500).json({
-                message: 'Error fetching reset requests',
-                error: err.message
-            });
-        }
-    }
-);
-
-// ========== ADMIN: APPROVE RESET REQUEST ==========
-router.put(
-    '/password-reset-requests/:id/approve',
-    authMiddleware,
-    adminMiddleware,
-    async(req, res) => {
-        try {
-            const requestId = Number(req.params.id);
-            const { temp_password, admin_note } = req.body || {};
-
-            const pr = await PasswordResetRequest.findOne({ id: requestId });
-            if (!pr) return res.status(404).json({ message: 'Request not found' });
-
-            if (pr.status !== 'pending') {
-                return res
-                    .status(400)
-                    .json({ message: 'Request already processed' });
-            }
-
-            const user = await User.findOne({ id: pr.user_id });
-            if (!user) return res.status(404).json({ message: 'User not found' });
-
-            const newPassword =
-                temp_password && String(temp_password).trim().length >= 6 ?
-                String(temp_password).trim() :
-                Math.random().toString(36).slice(-8); // random 8 chars
-
-            user.password = await bcrypt.hash(newPassword, 10);
-            await user.save();
-
-            pr.status = 'approved';
-            pr.admin_note = admin_note || '';
-            pr.temp_password_set = true;
-            await pr.save();
-
-            res.json({
-                message: 'Password reset approved',
-                user_id: user.id,
-                temp_password: newPassword
-            });
-        } catch (err) {
-            console.error('Approve reset request error:', err);
-            res
-                .status(500)
-                .json({ message: 'Error approving password reset' });
-        }
-    }
-);
-
-// ========== ADMIN: REJECT RESET REQUEST ==========
-router.put(
-    '/password-reset-requests/:id/reject',
-    authMiddleware,
-    adminMiddleware,
-    async(req, res) => {
-        try {
-            const requestId = Number(req.params.id);
-            const { admin_note } = req.body || {};
-
-            const pr = await PasswordResetRequest.findOneAndUpdate({ id: requestId }, { status: 'rejected', admin_note: admin_note || '' }, { new: true });
-
-            if (!pr) return res.status(404).json({ message: 'Request not found' });
-
-            res.json({ message: 'Password reset request rejected' });
-        } catch (err) {
-            console.error('Reject reset request error:', err);
-            res
-                .status(500)
-                .json({ message: 'Error rejecting password reset' });
-        }
-    }
-);
 
 // ========== ADMIN: USERS LIST / ROLE / BLOCK / DELETE ==========
 router.get('/users', authMiddleware, adminMiddleware, async(req, res) => {
