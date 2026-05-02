@@ -44,10 +44,30 @@ window.NextsUI = {
         });
     },
 
+    // UPDATED: safe fallback handling
     applyImageFallbacks() {
+        const fallbackSrc = '/images/fallback-product.jpg';
+
         document.querySelectorAll('img').forEach(img => {
+            // ensure we bind only once per image
+            if (img.dataset.fallbackBound === '1') return;
+            img.dataset.fallbackBound = '1';
+
             img.addEventListener('error', function() {
-                this.src = '/images/fallback-product.jpg';
+                const current = this.getAttribute('src') || '';
+
+                // 1) If it's a product image (/uploads/...), DO NOT fallback.
+                //    This prevents all products from suddenly showing the same milk image.
+                if (current.includes('/uploads/')) {
+                    console.warn('Missing product image:', current);
+                    return;
+                }
+
+                // 2) If it's already the fallback image, do nothing (avoid loops).
+                if (current.includes(fallbackSrc)) return;
+
+                // 3) For non-product images only, apply fallback.
+                this.src = fallbackSrc;
             });
         });
     },
@@ -119,17 +139,23 @@ window.NextsUI = {
     },
 
     getCartItemCount(cart) {
-        return (cart.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+        return (cart.items || []).reduce(
+            (sum, item) => sum + Number(item.quantity || 0),
+            0
+        );
     },
 
     async addToCart(product) {
         const cart = await this.fetchCart();
-        const items = Array.isArray(cart.items) ? cart.items.map((item) => ({
-            product_id: Number(item.product_id || item.id),
-            quantity: Number(item.quantity || 0)
-        })) : [];
+        const items = Array.isArray(cart.items) ?
+            cart.items.map((item) => ({
+                product_id: Number(item.product_id || item.id),
+                quantity: Number(item.quantity || 0)
+            })) : [];
 
-        const existing = items.find((item) => item.product_id === Number(product.id));
+        const existing = items.find(
+            (item) => item.product_id === Number(product.id)
+        );
         if (existing) {
             existing.quantity += 1;
         } else {
@@ -187,7 +213,9 @@ window.NextsUI = {
             </div>
         `;
 
-        const anchorTarget = document.getElementById('toast-container') || document.body.lastElementChild;
+        const anchorTarget =
+            document.getElementById('toast-container') ||
+            document.body.lastElementChild;
         if (anchorTarget && anchorTarget.parentNode) {
             anchorTarget.parentNode.insertBefore(footer, anchorTarget);
         } else {
