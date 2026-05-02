@@ -75,6 +75,7 @@
                     </div>
 
                     <div class="auth-forms-slider" id="auth-forms-slider">
+                        <!-- LOGIN SLIDE -->
                         <div class="auth-form-slide">
                             <div class="auth-form-card">
                                 <h2>Sign In</h2>
@@ -91,11 +92,18 @@
                                         <input type="password" id="login-password" placeholder="Enter your password" required />
                                     </div>
 
+                                    <div class="auth-extra-row">
+                                        <button type="button" class="auth-link-btn" id="forgot-password-btn">
+                      Forgot password?
+                    </button>
+                                    </div>
+
                                     <button type="submit" class="auth-action-btn">Sign In</button>
                                 </form>
                             </div>
                         </div>
 
+                        <!-- SIGNUP SLIDE -->
                         <div class="auth-form-slide">
                             <div class="auth-form-card">
                                 <h2>Create Account</h2>
@@ -117,7 +125,9 @@
                                         <input type="password" id="signup-password" placeholder="Create a strong password" required />
                                     </div>
 
-                                    <button type="submit" class="auth-action-btn signup-btn">Create Account</button>
+                                    <button type="submit" class="auth-action-btn signup-btn">
+                    Create Account
+                  </button>
                                 </form>
                             </div>
                         </div>
@@ -130,14 +140,18 @@
                     <div class="overlay-content login-state">
                         <p class="overlay-mini">HELLO, PARTNER</p>
                         <h3>New to Nexts?</h3>
-                        <p>Create your account and start managing your supply orders with speed and confidence.</p>
+                        <p>
+                            Create your account and start managing your supply orders with speed and confidence.
+                        </p>
                         <button class="overlay-btn" id="overlay-signup-btn">Sign Up</button>
                     </div>
 
                     <div class="overlay-content signup-state hidden">
                         <p class="overlay-mini">WELCOME BACK</p>
                         <h3>Already registered?</h3>
-                        <p>Sign in to continue ordering premium products for your business through Nexts.</p>
+                        <p>
+                            Sign in to continue ordering premium products for your business through Nexts.
+                        </p>
                         <button class="overlay-btn" id="overlay-login-btn">Sign In</button>
                     </div>
                 </div>
@@ -151,9 +165,9 @@
             <div class="site-footer-brand">
                 <h3>Nexts</h3>
                 <p>Smart supply for modern businesses.</p>
-                <span class="site-footer-copyright">
-                    Fast, reliable B2B supply for dairy, groceries, vegetables and beverages.
-                </span>
+                <span class="site-footeropyright">
+          Fast, reliable B2B supply for dairy, groceries, vegetables and beverages.
+        </span>
             </div>
 
             <div class="site-footer-links">
@@ -181,11 +195,11 @@
     <!-- Floating WhatsApp support button -->
     <a href="https://wa.me/919579544462" target="_blank" rel="noopener" class="whatsapp-support-btn">
         <span class="whatsapp-support-icon">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#FFFFFF"
-                      d="M16 3C9.383 3 4 8.383 4 15c0 2.43.73 4.688 1.985 6.59L4 29l7.65-1.945A11.86 11.86 0 0 0 16 27c6.617 0 12-5.383 12-12S22.617 3 16 3Zm0 2.4c5.293 0 9.6 4.307 9.6 9.6 0 5.294-4.307 9.6-9.6 9.6a9.55 9.55 0 0 1-4.858-1.344l-.347-.205-4.545 1.156 1.208-4.42-.225-.362A9.53 9.53 0 0 1 6.4 15c0-5.293 4.307-9.6 9.6-9.6Zm-3.09 4.2c-.242-.54-.497-.551-.727-.56-.188-.008-.403-.007-.619-.007s-.565.081-.862.404c-.297.322-1.133 1.107-1.133 2.7 0 1.592 1.16 3.132 1.321 3.35.163.216 2.227 3.56 5.49 4.85 2.717 1.07 3.27.856 3.86.803.59-.054 1.9-.777 2.17-1.526.27-.75.27-1.393.189-1.526-.081-.135-.297-.216-.62-.378-.323-.162-1.9-.938-2.19-1.044-.29-.108-.5-.162-.71.161-.21.323-.814 1.044-1 1.259-.188.216-.369.243-.692.081-.323-.162-1.366-.504-2.602-1.603-.962-.86-1.611-1.92-1.8-2.243-.188-.323-.02-.498.142-.66.146-.146.323-.378.485-.567.162-.189.216-.324.324-.54.108-.216.054-.405-.027-.567-.081-.162-.71-1.764-.974-2.404Z"/>
-            </svg>
-        </span>
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#FFFFFF"
+              d="M16 3C9.383 3 4 8.383 4 15c0 2.43.73 4.688 1.985 6.59L4 29l7.65-1.945A11.86 11.86 0 0 0 16 27c6.617 0 12-5.383 12-12S22.617 3 16 3Zm0 2.4c5.293 0 9.6 4.307 9.6 9.6 0 5.294-4.307 9.6-9.6 9.6a9.55 9.55 0 0 1-4.858-1.344l-.347-.205-4.545 1.156 1.208-4.42-.225-.362A9.53 9.53 0 0 1 6.4 15c0-5.293 4.307-9.6 9.6-9.6Zm-3.09 4.2c-.242-.54-.497-.551-.727-.56-.188-.008-.403-.007-.619-.007s-.565.081-.862.404c-.297.322-1.133 1.107-1.133 2.7 0 1.592 1.16 3.132 1.321 3.35.163.216 2.227 3.56 5.49 4.85 2.717 1.07 3.27.856 3.86.803.59-.054 1.9-.777 2.17-1.526.27-.75.27-1.393.189-1.526-.081-.135-.297-.216-.62-.378-.323-.162-1.9-.938-2.19-1.044-.29-.108-.5-.162-.71.161-.21.323-.814 1.044-1 1.259-.188.216-.369.243-.692.081-.323-.162-1.366-.504-2.602-1.603-.962-.86-1.611-1.92-1.8-2.243-.188-.323-.02-.498.142-.66.146-.146.323-.378.485-.567.162-.189.216-.324.324-.54.108-.216.054-.405-.027-.567-.081-.162-.71-1.764-.974-2.404Z"/>
+      </svg>
+    </span>
     </a>
 
     <div id="toast-container" class="toast-container"></div>
