@@ -15,7 +15,8 @@ const { validateEnv, getStartupConfigSummary } = require('./utils/env');
 const app = express();
 
 /**
- * Uploads ko ab public/uploads me rakh rahe hain
+ * Uploaded images ko public/uploads me rakhte hain
+ * taaki static files ke saath hi serve ho saken.
  */
 const uploadsDir = path.join(__dirname, 'public', 'uploads');
 
@@ -186,7 +187,6 @@ async function startServer() {
 
     try {
         config = validateEnv();
-        logStartupConfig(config);
     } catch (error) {
         logStartupFailure(error);
         process.exit(1);

@@ -9,7 +9,8 @@ const { cleanDoc, cleanDocs } = require('../utils/format');
 
 const router = express.Router();
 
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+// SAME folder as server.js static: public/uploads
+const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
@@ -96,6 +97,7 @@ function validateProductFields({
 
 function imageUrlForFile(file) {
     if (!file || !file.filename) return '';
+    // Browser URL served via server.js
     return `/uploads/${file.filename}`;
 }
 
@@ -191,7 +193,7 @@ router.post(
  * PUT /api/products/:id
  * Update product
  * - If new image is uploaded: replace old
- * - If no new image: keep old image (stable)
+ * - If no new image: keep old image
  */
 router.put(
     '/:id',
