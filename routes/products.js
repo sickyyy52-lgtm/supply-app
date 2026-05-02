@@ -1,6 +1,7 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
 const Product = require('../models/Product');
 const { nextSequence } = require('../models/Counter');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
@@ -8,16 +9,36 @@ const { cleanDoc, cleanDocs } = require('../utils/format');
 
 const router = express.Router();
 
-// Cloudinary config (env se: CLOUDINARY_URL)
-cloudinary.config({
-    cloudinary_url: process.env.CLOUDINARY_URL
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        const extension =
+            path.extname(file.originalname || '').toLowerCase() || '.jpg';
+        const safeBaseName =
+            path
+            .basename(file.originalname || 'product-image', extension)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 50) || 'product-image';
+
+        cb(null, `${Date.now()}-${safeBaseName}${extension}`);
+    }
 });
 
-// Multer memory storage (disk pe file nahi banega)
-const storage = multer.memoryStorage();
 const upload = multer({
     storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
     fileFilter: (req, file, cb) => {
         if (!file.mimetype || !file.mimetype.startsWith('image/')) {
             return cb(new Error('Only image uploads are allowed'));
@@ -46,34 +67,47 @@ function validateProductFields({
     image,
     requireImageUpload = false
 }) {
-    if (!name || !String(name).trim()) return 'Product name is required';
-    if (!category || !String(category).trim()) return 'Category is required';
-    if (price === null) return 'Price must be a valid non-negative number';
-    if (stock === null) return 'Stock must be a valid non-negative integer';
-    if (requireImageUpload && !image) return 'Product image upload is required';
-    if (!requireImageUpload && !image) return 'Product image is required';
+    if (!name || !String(name).trim()) {
+        return 'Product name is required';
+    }
+
+    if (!category || !String(category).trim()) {
+        return 'Category is required';
+    }
+
+    if (price === null) {
+        return 'Price must be a valid non-negative number';
+    }
+
+    if (stock === null) {
+        return 'Stock must be a valid non-negative integer';
+    }
+
+    if (requireImageUpload && !image) {
+        return 'Product image upload is required';
+    }
+
+    if (!requireImageUpload && !image) {
+        return 'Product image is required';
+    }
+
     return '';
 }
 
-// Cloudinary upload helper
-function uploadToCloudinary(fileBuffer, filename = 'product-image') {
-    return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream({
-                resource_type: 'image',
-                folder: 'nexts/products',
-                public_id: `${Date.now()}-${filename}`
-            },
-            (error, result) => {
-                if (error) {
-                    console.error('Cloudinary upload error:', error);
-                    return reject(new Error('Failed to upload image'));
-                }
-                resolve(result.secure_url); // https://res.cloudinary.com/...
-            }
-        );
+function imageUrlForFile(file) {
+    if (!file || !file.filename) return '';
+    return `/uploads/${file.filename}`;
+}
 
-        stream.end(fileBuffer);
-    });
+function deleteUploadedFile(imageUrl) {
+    if (!imageUrl || !String(imageUrl).startsWith('/uploads/')) {
+        return;
+    }
+
+    const filePath = path.join(uploadsDir, path.basename(String(imageUrl)));
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
 }
 
 /**
@@ -107,27 +141,23 @@ router.post(
             console.log('ADD PRODUCT FILE:', req.file);
 
             const { name, category } = req.body || {};
-            const price = parsePrice(req.body ? .price);
-            const stock = parseStock(req.body ? .stock);
-
-            let imageUrl = '';
-            if (req.file && req.file.buffer) {
-                imageUrl = await uploadToCloudinary(
-                    req.file.buffer,
-                    req.file.originalname || 'product-image'
-                );
-            }
+            const price = parsePrice(req.body ? req.body.price : undefined);
+            const stock = parseStock(req.body ? req.body.stock : undefined);
+            const image = imageUrlForFile(req.file);
 
             const validationError = validateProductFields({
                 name,
                 category,
                 price,
                 stock,
-                image: imageUrl,
+                image,
                 requireImageUpload: true
             });
 
             if (validationError) {
+                if (req.file) {
+                    deleteUploadedFile(image);
+                }
                 return res.status(400).json({ message: validationError });
             }
 
@@ -136,7 +166,7 @@ router.post(
                 name: String(name).trim(),
                 category: String(category).trim(),
                 price,
-                image: imageUrl,
+                image: String(image).trim(),
                 stock
             });
 
@@ -146,6 +176,9 @@ router.post(
             });
         } catch (error) {
             console.error('Product add error:', error);
+            if (req.file) {
+                deleteUploadedFile(imageUrlForFile(req.file));
+            }
             res.status(500).json({
                 message: 'Error adding product',
                 error: error.message
@@ -156,7 +189,9 @@ router.post(
 
 /**
  * PUT /api/products/:id
- * Update product (image optional)
+ * Update product
+ * - If new image is uploaded: replace old
+ * - If no new image: keep old image (stable)
  */
 router.put(
     '/:id',
@@ -171,31 +206,33 @@ router.put(
             console.log('UPDATE PRODUCT FILE:', req.file);
 
             const { name, category } = req.body || {};
-            const price = parsePrice(req.body ? .price);
-            const stock = parseStock(req.body ? .stock);
+            const price = parsePrice(req.body ? req.body.price : undefined);
+            const stock = parseStock(req.body ? req.body.stock : undefined);
 
             const existingProduct = await Product.findOne({ id: productId });
             if (!existingProduct) {
+                if (req.file) {
+                    deleteUploadedFile(imageUrlForFile(req.file));
+                }
                 return res.status(404).json({ message: 'Product not found' });
             }
 
-            let imageUrl = existingProduct.image;
-            if (req.file && req.file.buffer) {
-                imageUrl = await uploadToCloudinary(
-                    req.file.buffer,
-                    req.file.originalname || 'product-image'
-                );
-            }
+            const image = req.file ?
+                imageUrlForFile(req.file) :
+                existingProduct.image;
 
             const validationError = validateProductFields({
                 name,
                 category,
                 price,
                 stock,
-                image: imageUrl
+                image
             });
 
             if (validationError) {
+                if (req.file) {
+                    deleteUploadedFile(imageUrlForFile(req.file));
+                }
                 return res.status(400).json({ message: validationError });
             }
 
@@ -203,15 +240,26 @@ router.put(
                 name: String(name).trim(),
                 category: String(category).trim(),
                 price,
-                image: imageUrl,
+                image: String(image).trim(),
                 stock
             }, { new: true });
+
+            if (
+                req.file &&
+                existingProduct.image &&
+                existingProduct.image !== image
+            ) {
+                deleteUploadedFile(existingProduct.image);
+            }
 
             res.json({
                 message: 'Product updated successfully',
                 product: cleanDoc(updated)
             });
         } catch (error) {
+            if (req.file) {
+                deleteUploadedFile(imageUrlForFile(req.file));
+            }
             console.error('Product update error:', error);
             res.status(500).json({
                 message: 'Error updating product',
@@ -238,7 +286,7 @@ router.delete(
                 return res.status(404).json({ message: 'Product not found' });
             }
 
-            // (Optional) yahan Cloudinary se image delete karne ka logic add kar sakte ho
+            deleteUploadedFile(product.image);
 
             res.json({ message: 'Product deleted successfully' });
         } catch (error) {
