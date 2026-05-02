@@ -1,5 +1,7 @@
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user'));
+const PRODUCT_IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+const PRODUCT_IMAGE_MAX_SIZE = 2 * 1024 * 1024;
 
 if (!token || !user || user.role !== 'admin') {
     window.location.href = '/login';
@@ -349,10 +351,17 @@ if (productImageInput) {
             return;
         }
 
-        if (!file.type || !file.type.startsWith('image/')) {
+        if (!PRODUCT_IMAGE_TYPES.has(file.type)) {
             productImageInput.value = '';
             renderProductImagePreview(currentProductImageUrl);
-            if (window.NextsUI) window.NextsUI.showToast('Only image files are allowed', 'error');
+            if (window.NextsUI) window.NextsUI.showToast('Only JPEG, PNG, and WEBP product images are allowed', 'error');
+            return;
+        }
+
+        if (file.size > PRODUCT_IMAGE_MAX_SIZE) {
+            productImageInput.value = '';
+            renderProductImagePreview(currentProductImageUrl);
+            if (window.NextsUI) window.NextsUI.showToast('Product image must be 2MB or smaller', 'error');
             return;
         }
 
@@ -652,8 +661,13 @@ if (productForm) {
             return;
         }
 
-        if (selectedFile && (!selectedFile.type || !selectedFile.type.startsWith('image/'))) {
-            if (window.NextsUI) window.NextsUI.showToast('Only image files are allowed', 'error');
+        if (selectedFile && !PRODUCT_IMAGE_TYPES.has(selectedFile.type)) {
+            if (window.NextsUI) window.NextsUI.showToast('Only JPEG, PNG, and WEBP product images are allowed', 'error');
+            return;
+        }
+
+        if (selectedFile && selectedFile.size > PRODUCT_IMAGE_MAX_SIZE) {
+            if (window.NextsUI) window.NextsUI.showToast('Product image must be 2MB or smaller', 'error');
             return;
         }
 

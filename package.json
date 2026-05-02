@@ -5,15 +5,16 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "check": "node --check server.js && node --check models/db.js && node --check models/Counter.js && node --check models/User.js && node --check models/Product.js && node --check models/Order.js && node --check models/Cart.js && node --check models/PaymentSetting.js && node --check models/PaymentProof.js && node --check models/PasswordResetRequest.js && node --check models/Wallet.js && node --check models/WalletTransaction.js && node --check models/WalletTopup.js && node --check models/Notification.js && node --check routes/admin.js && node --check routes/auth.js && node --check routes/cart.js && node --check routes/products.js && node --check routes/orders.js && node --check routes/payments.js && node --check routes/wallet.js && node --check public/js/admin.js && node --check public/js/auth.js && node --check public/js/cart.js && node --check public/js/dashboard.js"
+        "check": "node --check server.js && node --check utils/cloudinary.js && node --check utils/env.js && node --check middleware/productUpload.js && node --check models/db.js && node --check models/Counter.js && node --check models/User.js && node --check models/Product.js && node --check models/Order.js && node --check models/Cart.js && node --check models/PaymentSetting.js && node --check models/PaymentProof.js && node --check models/PasswordResetRequest.js && node --check models/Wallet.js && node --check models/WalletTransaction.js && node --check models/WalletTopup.js && node --check models/Notification.js && node --check routes/admin.js && node --check routes/auth.js && node --check routes/cart.js && node --check routes/products.js && node --check routes/orders.js && node --check routes/payments.js && node --check routes/wallet.js && node --check public/js/admin.js && node --check public/js/auth.js && node --check public/js/cart.js && node --check public/js/dashboard.js && node --check public/js/utils.js"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
-        "cloudinary": "^2.10.0",
+        "cloudinary": "^1.41.3",
         "dotenv": "^16.6.1",
         "express": "^4.22.1",
         "jsonwebtoken": "^9.0.3",
         "mongoose": "^9.6.1",
-        "multer": "^2.0.2"
+        "multer": "^2.0.2",
+        "multer-storage-cloudinary": "^4.0.0"
     }
 }

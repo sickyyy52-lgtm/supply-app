@@ -21,6 +21,9 @@ function validateEnv(env = process.env) {
     const missing = [];
     const mongoUri = getMongoUri(env);
     const jwtSecret = getEnvValue(env, 'JWT_SECRET');
+    const cloudinaryCloudName = getEnvValue(env, 'CLOUDINARY_CLOUD_NAME');
+    const cloudinaryApiKey = getEnvValue(env, 'CLOUDINARY_API_KEY');
+    const cloudinaryApiSecret = getEnvValue(env, 'CLOUDINARY_API_SECRET');
 
     if (!mongoUri) {
         missing.push('MONGO_URI');
@@ -28,6 +31,18 @@ function validateEnv(env = process.env) {
 
     if (!jwtSecret) {
         missing.push('JWT_SECRET');
+    }
+
+    if (!cloudinaryCloudName) {
+        missing.push('CLOUDINARY_CLOUD_NAME');
+    }
+
+    if (!cloudinaryApiKey) {
+        missing.push('CLOUDINARY_API_KEY');
+    }
+
+    if (!cloudinaryApiSecret) {
+        missing.push('CLOUDINARY_API_SECRET');
     }
 
     if (missing.length) {
@@ -49,7 +64,8 @@ function validateEnv(env = process.env) {
         port,
         mongoUri,
         mongoHost: getMongoHost(mongoUri),
-        portSource: getEnvValue(env, 'PORT') ? 'PORT' : 'default'
+        portSource: getEnvValue(env, 'PORT') ? 'PORT' : 'default',
+        cloudinaryCloudName
     };
 }
 
@@ -58,7 +74,8 @@ function getStartupConfigSummary(config, env = process.env) {
         nodeEnv: getEnvValue(env, 'NODE_ENV') || 'development',
         port: `${config.port}${config.portSource === 'PORT' ? ' (from process.env.PORT)' : ' (default)'}`,
         mongoUri: `set (${config.mongoHost})`,
-        jwtSecret: `set (${getEnvValue(env, 'JWT_SECRET').length} chars)`
+        jwtSecret: `set (${getEnvValue(env, 'JWT_SECRET').length} chars)`,
+        cloudinary: `set (${config.cloudinaryCloudName})`
     };
 }
 

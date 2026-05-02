@@ -1,52 +1,13 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
 const Product = require('../models/Product');
 const { nextSequence } = require('../models/Counter');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
+const { productImageUpload } = require('../middleware/productUpload');
+const { deleteCloudinaryImage } = require('../utils/cloudinary');
 const { cleanDoc, cleanDocs } = require('../utils/format');
 
 const router = express.Router();
-
-// SAME folder as server.js static: public/uploads
-const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
-
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-        const extension =
-            path.extname(file.originalname || '').toLowerCase() || '.jpg';
-        const safeBaseName =
-            path
-            .basename(file.originalname || 'product-image', extension)
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '')
-            .slice(0, 50) || 'product-image';
-
-        cb(null, `${Date.now()}-${safeBaseName}${extension}`);
-    }
-});
-
-const upload = multer({
-    storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024
-    },
-    fileFilter: (req, file, cb) => {
-        if (!file.mimetype || !file.mimetype.startsWith('image/')) {
-            return cb(new Error('Only image uploads are allowed'));
-        }
-        cb(null, true);
-    }
-});
 
 function parsePrice(value) {
     const price = Number(value);
@@ -96,20 +57,7 @@ function validateProductFields({
 }
 
 function imageUrlForFile(file) {
-    if (!file || !file.filename) return '';
-    // Browser URL served via server.js
-    return `/uploads/${file.filename}`;
-}
-
-function deleteUploadedFile(imageUrl) {
-    if (!imageUrl || !String(imageUrl).startsWith('/uploads/')) {
-        return;
-    }
-
-    const filePath = path.join(uploadsDir, path.basename(String(imageUrl)));
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }
+    return file && file.path ? String(file.path) : '';
 }
 
 /**
@@ -136,7 +84,7 @@ router.post(
     '/',
     authMiddleware,
     adminMiddleware,
-    upload.single('image'),
+    productImageUpload.single('image'),
     async(req, res) => {
         try {
             console.log('ADD PRODUCT BODY:', req.body);
@@ -158,7 +106,7 @@ router.post(
 
             if (validationError) {
                 if (req.file) {
-                    deleteUploadedFile(image);
+                    await deleteCloudinaryImage(image);
                 }
                 return res.status(400).json({ message: validationError });
             }
@@ -179,7 +127,7 @@ router.post(
         } catch (error) {
             console.error('Product add error:', error);
             if (req.file) {
-                deleteUploadedFile(imageUrlForFile(req.file));
+                await deleteCloudinaryImage(imageUrlForFile(req.file));
             }
             res.status(500).json({
                 message: 'Error adding product',
@@ -199,7 +147,7 @@ router.put(
     '/:id',
     authMiddleware,
     adminMiddleware,
-    upload.single('image'),
+    productImageUpload.single('image'),
     async(req, res) => {
         const productId = Number(req.params.id);
 
@@ -214,7 +162,7 @@ router.put(
             const existingProduct = await Product.findOne({ id: productId });
             if (!existingProduct) {
                 if (req.file) {
-                    deleteUploadedFile(imageUrlForFile(req.file));
+                    await deleteCloudinaryImage(imageUrlForFile(req.file));
                 }
                 return res.status(404).json({ message: 'Product not found' });
             }
@@ -233,7 +181,7 @@ router.put(
 
             if (validationError) {
                 if (req.file) {
-                    deleteUploadedFile(imageUrlForFile(req.file));
+                    await deleteCloudinaryImage(imageUrlForFile(req.file));
                 }
                 return res.status(400).json({ message: validationError });
             }
@@ -251,7 +199,7 @@ router.put(
                 existingProduct.image &&
                 existingProduct.image !== image
             ) {
-                deleteUploadedFile(existingProduct.image);
+                await deleteCloudinaryImage(existingProduct.image);
             }
 
             res.json({
@@ -260,7 +208,7 @@ router.put(
             });
         } catch (error) {
             if (req.file) {
-                deleteUploadedFile(imageUrlForFile(req.file));
+                await deleteCloudinaryImage(imageUrlForFile(req.file));
             }
             console.error('Product update error:', error);
             res.status(500).json({
@@ -288,7 +236,7 @@ router.delete(
                 return res.status(404).json({ message: 'Product not found' });
             }
 
-            deleteUploadedFile(product.image);
+            await deleteCloudinaryImage(product.image);
 
             res.json({ message: 'Product deleted successfully' });
         } catch (error) {
@@ -306,15 +254,19 @@ router.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
         return res.status(400).json({
             message: error.code === 'LIMIT_FILE_SIZE' ?
-                'Image must be 5MB or smaller' : error.message
+                'Product image must be 2MB or smaller' : error.message
         });
     }
 
-    if (error && error.message === 'Only image uploads are allowed') {
+    if (error && error.message === 'Only JPEG, PNG, and WEBP product images are allowed') {
         return res.status(400).json({ message: error.message });
     }
 
-    next(error);
+    console.error('Product image upload error:', error);
+    return res.status(500).json({
+        message: 'Product image upload failed. Please try again.',
+        error: error.message
+    });
 });
 
 module.exports = router;

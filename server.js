@@ -15,10 +15,8 @@ const { validateEnv, getStartupConfigSummary } = require('./utils/env');
 
 const app = express();
 
-/**
- * Uploaded images ko public/uploads me rakhte hain
- * taaki static files ke saath hi serve ho saken.
- */
+// Legacy local uploads are still served for existing payment proof/QR assets.
+// Product images are uploaded to Cloudinary and stored as full URLs in MongoDB.
 const uploadsDir = path.join(__dirname, 'public', 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
@@ -51,7 +49,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Static serving
-app.use('/uploads', express.static(uploadsDir)); // uploaded images
+app.use('/uploads', express.static(uploadsDir)); // legacy payment proof/QR images
 app.use(express.static(path.join(__dirname, 'public'))); // css/js/html/images
 
 // HTML pages
@@ -165,6 +163,7 @@ function logStartupConfig(config) {
     console.log(`[startup] PORT: ${summary.port}`);
     console.log(`[startup] MONGO_URI: ${summary.mongoUri}`);
     console.log(`[startup] JWT_SECRET: ${summary.jwtSecret}`);
+    console.log(`[startup] Cloudinary: ${summary.cloudinary}`);
 }
 
 function logStartupFailure(error) {
