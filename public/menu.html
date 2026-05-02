@@ -23,7 +23,7 @@
 
         <div class="nav-center">
             <div class="search-bar">
-                <input type="text" id="menu-search-input" placeholder="Search all products..." />
+                <input type="text" id="menu-search-input" placeholder="Search products (milk, paneer, seeds...)" />
                 <span class="search-icon">⌕</span>
             </div>
         </div>
@@ -65,6 +65,35 @@
                 <button class="cat-btn" data-key="vegetables">Vegetables</button>
                 <button class="cat-btn" data-key="grocery">Grocery</button>
                 <button class="cat-btn" data-key="beverages">Beverages</button>
+            </div>
+        </section>
+
+        <section class="product-filter-panel reveal active" aria-label="Product search and filters">
+            <div class="input-group product-search-field">
+                <label for="product-search-input">Search Products</label>
+                <input type="text" id="product-search-input" placeholder="Search products (milk, paneer, seeds...)" />
+            </div>
+
+            <div class="input-group">
+                <label for="product-category-filter">Category</label>
+                <select id="product-category-filter">
+                    <option value="All">All</option>
+                    <option value="Dairy">Dairy</option>
+                    <option value="Seeds">Seeds</option>
+                    <option value="Vegetables">Vegetables</option>
+                    <option value="Grocery">Grocery</option>
+                    <option value="Beverages">Beverages</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="product-min-price">Min Price</label>
+                <input type="number" id="product-min-price" min="0" step="1" placeholder="0" />
+            </div>
+
+            <div class="input-group">
+                <label for="product-max-price">Max Price</label>
+                <input type="number" id="product-max-price" min="0" step="1" placeholder="500" />
             </div>
         </section>
 

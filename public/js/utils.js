@@ -158,6 +158,32 @@ window.NextsUI = {
         return this.saveCartItems(items);
     },
 
+    getStoredUser() {
+        try {
+            return JSON.parse(localStorage.getItem('user') || 'null');
+        } catch {
+            return null;
+        }
+    },
+
+    buildWhatsAppOrderUrl(product, quantity = 1) {
+        const messageLines = [
+            'Hi, I want to place an order:',
+            '',
+            `Product: ${product.name}`,
+            `Price: ₹${Number(product.price || 0).toFixed(2)}`,
+            `Quantity: ${Number(quantity || 1)}`,
+            '',
+            'Please confirm availability and delivery.'
+        ];
+
+        return `https://wa.me/919579544462?text=${encodeURIComponent(messageLines.join('\n'))}`;
+    },
+
+    openWhatsAppOrder(product, quantity = 1) {
+        window.open(this.buildWhatsAppOrderUrl(product, quantity), '_blank', 'noopener,noreferrer');
+    },
+
     injectGlobalSupportUI() {
         if (document.querySelector('.site-footer')) {
             return;

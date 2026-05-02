@@ -21,6 +21,49 @@ function parseStock(value) {
     return stock;
 }
 
+function parseOptionalPrice(value) {
+    if (value === undefined || value === null || String(value).trim() === '') {
+        return null;
+    }
+
+    const price = Number(value);
+    if (!Number.isFinite(price) || price < 0) return null;
+    return price;
+}
+
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildProductQuery(queryParams = {}) {
+    const { search, category, minPrice, maxPrice } = queryParams;
+    const filters = {};
+    const normalizedSearch = String(search || '').trim();
+    const normalizedCategory = String(category || '').trim();
+    const min = parseOptionalPrice(minPrice);
+    const max = parseOptionalPrice(maxPrice);
+
+    if (normalizedSearch) {
+        const searchRegex = new RegExp(escapeRegExp(normalizedSearch), 'i');
+        filters.$or = [
+            { name: searchRegex },
+            { category: searchRegex }
+        ];
+    }
+
+    if (normalizedCategory && normalizedCategory.toLowerCase() !== 'all') {
+        filters.category = new RegExp(escapeRegExp(normalizedCategory), 'i');
+    }
+
+    if (min !== null || max !== null) {
+        filters.price = {};
+        if (min !== null) filters.price.$gte = min;
+        if (max !== null) filters.price.$lte = max;
+    }
+
+    return { filters, min, max };
+}
+
 function validateProductFields({
     name,
     category,
@@ -65,7 +108,21 @@ function imageUrlForFile(file) {
  */
 router.get('/', async(req, res) => {
     try {
-        const products = await Product.find({}).sort({ id: -1 });
+        const { filters, min, max } = buildProductQuery(req.query);
+
+        if (req.query.minPrice && min === null) {
+            return res.status(400).json({ message: 'minPrice must be a valid non-negative number' });
+        }
+
+        if (req.query.maxPrice && max === null) {
+            return res.status(400).json({ message: 'maxPrice must be a valid non-negative number' });
+        }
+
+        if (min !== null && max !== null && min > max) {
+            return res.status(400).json({ message: 'minPrice cannot be greater than maxPrice' });
+        }
+
+        const products = await Product.find(filters).sort({ id: -1 });
         res.json(cleanDocs(products));
     } catch (error) {
         console.error('Products fetch error:', error);
