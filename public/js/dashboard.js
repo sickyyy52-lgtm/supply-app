@@ -45,6 +45,15 @@ logoutBtn.addEventListener('click', () => {
     }, 500);
 });
 
+function formatPaymentMethod(method) {
+    if (method === 'COD' || method === 'Cash on Delivery') return 'COD';
+    return method || '-';
+}
+
+function formatPaymentStatus(status) {
+    return String(status || '-').replace(/_/g, ' ');
+}
+
 async function fetchProfile() {
     try {
         const res = await fetch('/api/auth/me', {
@@ -151,8 +160,8 @@ async function fetchOrders() {
             order.delivery_slot === 'evening' ? 'Evening (5–8 PM)' :
             'Any'
           }</p>
-          <p><strong>Payment:</strong> ${order.payment_method || 'Cash on Delivery'}</p>
-          <p><strong>Payment Status:</strong> ${order.payment_status || 'not_required'}</p>
+          <p><strong>Payment:</strong> ${formatPaymentMethod(order.payment_method)}</p>
+          <p><strong>Payment Status:</strong> ${formatPaymentStatus(order.payment_status)}</p>
           <p><strong>Subscription:</strong> ${order.is_subscription ? 'Yes' : 'No'}</p>
         </div>
 
@@ -273,9 +282,18 @@ async function fetchPaymentConfigForTopup() {
             return;
         }
         if (dashboardUpiId) dashboardUpiId.textContent = config.upi_id || 'Not available';
-        if (dashboardUpiQr && config.qr_image_url) {
-            dashboardUpiQr.src = config.qr_image_url;
-            dashboardUpiQr.style.display = 'block';
+        if (dashboardUpiQr) {
+            const qrUrl = config.qr_image_url || config.last_valid_qr_image_url || '';
+            if (qrUrl) {
+                dashboardUpiQr.src = qrUrl;
+                dashboardUpiQr.style.display = 'block';
+                dashboardUpiQr.onerror = () => {
+                    dashboardUpiQr.style.display = 'none';
+                };
+            } else {
+                dashboardUpiQr.removeAttribute('src');
+                dashboardUpiQr.style.display = 'none';
+            }
         }
     } catch (error) {
         if (dashboardUpiId) dashboardUpiId.textContent = 'Unable to load UPI details';

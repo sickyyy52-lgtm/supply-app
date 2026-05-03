@@ -19,6 +19,15 @@
         throw new Error(text || 'Unexpected server response');
     }
 
+    function formatPaymentMethod(method) {
+        if (method === 'COD' || method === 'Cash on Delivery') return 'COD';
+        return method || '—';
+    }
+
+    function formatPaymentStatus(status) {
+        return String(status || '—').replace(/_/g, ' ');
+    }
+
     const orderId = getQueryParam('orderId');
     const els = {
         id: document.getElementById('invoice-id'),
@@ -61,8 +70,8 @@
             els.phone.textContent = data.phone || '—';
             els.addr.textContent = data.address || '—';
 
-            els.payMethod.textContent = data.payment_method || 'Cash on Delivery';
-            els.payStatus.textContent = data.payment_status || 'not_required';
+            els.payMethod.textContent = formatPaymentMethod(data.payment_method);
+            els.payStatus.textContent = formatPaymentStatus(data.payment_status);
             els.sub.textContent = data.is_subscription ? 'Yes (Subscription)' : 'No';
 
             els.slot.textContent =

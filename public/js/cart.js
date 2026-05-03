@@ -7,14 +7,20 @@ const cartItemsCount = document.getElementById('cart-items-count');
 const cartLoginLink = document.getElementById('cart-login-link');
 const cartDashboardLink = document.getElementById('cart-dashboard-link');
 const upiConfigCard = document.getElementById('upi-config-card');
-const upiProofCard = document.getElementById('upi-proof-card');
-const checkoutUpiId = document.getElementById('checkout-upi-id');
-const checkoutUpiQr = document.getElementById('checkout-upi-qr');
-const paymentScreenshotInput = document.getElementById('payment_screenshot');
+const codPaymentCard = document.getElementById('cod-payment-card');
+const walletPaymentCard = document.getElementById('wallet-payment-card');
+const paymentMethodOptions = document.querySelectorAll('.payment-method-option');
+const walletOptionMeta = document.getElementById('wallet-option-meta');
+const checkoutWalletBalance = document.getElementById('checkout-wallet-balance');
+const checkoutWalletStatus = document.getElementById('checkout-wallet-status');
 const isSubscriptionInput = document.getElementById('is_subscription');
 
+const NEXTS_UPI_ID = '9579544462@ptyes';
+const NEXTS_PAYEE_NAME = 'Nexts';
 const HANDLING_CHARGE = 0;
 let currentCart = { items: [] };
+let walletBalance = 0;
+let walletLoaded = false;
 
 function getCartItems() {
     return Array.isArray(currentCart.items) ? currentCart.items : [];
@@ -60,37 +66,23 @@ function updateNavbarState() {
     }
 }
 
-function setupPaymentSelection() {
-    const paymentOptions = document.querySelectorAll('.payment-option');
+function getSelectedPaymentMethod() {
+    const selected = document.querySelector('input[name="payment_method"]:checked');
+    return selected ? selected.value : 'UPI';
+}
 
-    paymentOptions.forEach((option) => {
-        option.addEventListener('click', () => {
-            paymentOptions.forEach((entry) => entry.classList.remove('active-payment'));
-            option.classList.add('active-payment');
-
-            const radio = option.querySelector('input');
-            if (radio) {
-                radio.checked = true;
-            }
-
-            updatePaymentVisibility();
-        });
+function setSelectedPaymentMethod(method) {
+    paymentMethodOptions.forEach((option) => {
+        const input = option.querySelector('input[name="payment_method"]');
+        const isSelected = input && input.value === method;
+        option.classList.toggle('active-payment', isSelected);
+        if (input) input.checked = isSelected;
     });
 }
 
-function getSelectedPaymentMethod() {
-    const selected = document.querySelector('input[name="payment_method"]:checked');
-    if (selected) {
-        return selected.value;
-    }
-    return 'Cash on Delivery';
-}
-
-function updatePaymentVisibility() {
-    const method = getSelectedPaymentMethod();
-    const showUpi = method === 'UPI';
-    if (upiConfigCard) upiConfigCard.classList.toggle('hidden', !showUpi);
-    if (upiProofCard) upiProofCard.classList.toggle('hidden', !showUpi);
+function getCartTotal() {
+    const subtotal = getCartItems().reduce((sum, item) => sum + Number(item.price) * Number(item.quantity || 0), 0);
+    return Number((subtotal + HANDLING_CHARGE).toFixed(2));
 }
 
 async function fileToBase64(file) {
@@ -102,22 +94,266 @@ async function fileToBase64(file) {
     });
 }
 
-async function fetchPaymentConfig() {
+async function fetchWalletBalance() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        walletLoaded = false;
+        walletBalance = 0;
+        return;
+    }
+
     try {
-        const res = await fetch('/api/payments/config');
-        const config = await res.json();
-        if (!config) {
-            if (checkoutUpiId) checkoutUpiId.textContent = 'Not configured yet';
-            return;
+        const res = await fetch('/api/wallet/me', {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to load wallet');
+
+        walletBalance = Number(data.balance || 0);
+        walletLoaded = true;
+    } catch (error) {
+        walletLoaded = false;
+        walletBalance = 0;
+        if (window.NextsUI) window.NextsUI.showToast(error.message || 'Failed to load wallet balance', 'error');
+    }
+}
+
+function buildUpiPaymentString(amount, orderId) {
+    return [
+        `upi://pay?pa=${NEXTS_UPI_ID}`,
+        `pn=${encodeURIComponent(NEXTS_PAYEE_NAME)}`,
+        `am=${Number(amount || 0).toFixed(2)}`,
+        'cu=INR',
+        `tn=${encodeURIComponent(String(orderId))}`
+    ].join('&');
+}
+
+function createQrSvgDataUrl(text) {
+    const version = 5;
+    const size = 17 + 4 * version;
+    const dataCodewords = 108;
+    const eccCodewords = 26;
+    const mask = 0;
+    const bytes = Array.from(new TextEncoder().encode(text));
+
+    if (bytes.length > 106) {
+        throw new Error('UPI QR payload is too long');
+    }
+
+    const dataBits = [];
+    const appendBits = (value, length) => {
+        for (let bit = length - 1; bit >= 0; bit--) {
+            dataBits.push((value >>> bit) & 1);
+        }
+    };
+
+    appendBits(0x4, 4);
+    appendBits(bytes.length, 8);
+    bytes.forEach((byte) => appendBits(byte, 8));
+
+    const capacityBits = dataCodewords * 8;
+    for (let i = 0; i < 4 && dataBits.length < capacityBits; i++) dataBits.push(0);
+    while (dataBits.length % 8) dataBits.push(0);
+
+    const data = [];
+    for (let i = 0; i < dataBits.length; i += 8) {
+        data.push(dataBits.slice(i, i + 8).reduce((value, bit) => (value << 1) | bit, 0));
+    }
+
+    const padBytes = [0xec, 0x11];
+    let padIndex = 0;
+    while (data.length < dataCodewords) {
+        data.push(padBytes[padIndex % 2]);
+        padIndex++;
+    }
+
+    const exp = new Array(512);
+    const log = new Array(256);
+    let value = 1;
+    for (let i = 0; i < 255; i++) {
+        exp[i] = value;
+        log[value] = i;
+        value <<= 1;
+        if (value & 0x100) value ^= 0x11d;
+    }
+    for (let i = 255; i < exp.length; i++) exp[i] = exp[i - 255];
+
+    const multiply = (left, right) => {
+        if (!left || !right) return 0;
+        return exp[log[left] + log[right]];
+    };
+
+    const multiplyPolynomials = (left, right) => {
+        const result = new Array(left.length + right.length - 1).fill(0);
+        left.forEach((leftValue, leftIndex) => {
+            right.forEach((rightValue, rightIndex) => {
+                result[leftIndex + rightIndex] ^= multiply(leftValue, rightValue);
+            });
+        });
+        return result;
+    };
+
+    let generator = [1];
+    for (let i = 0; i < eccCodewords; i++) {
+        generator = multiplyPolynomials(generator, [1, exp[i]]);
+    }
+
+    const ecc = new Array(eccCodewords).fill(0);
+    data.forEach((byte) => {
+        const factor = byte ^ ecc[0];
+        ecc.shift();
+        ecc.push(0);
+        for (let i = 0; i < eccCodewords; i++) {
+            ecc[i] ^= multiply(generator[i + 1], factor);
+        }
+    });
+
+    const codewords = data.concat(ecc);
+    const modules = Array.from({ length: size }, () => Array(size).fill(false));
+    const reserved = Array.from({ length: size }, () => Array(size).fill(false));
+
+    const setFunctionModule = (row, col, isDark) => {
+        if (row < 0 || col < 0 || row >= size || col >= size) return;
+        modules[row][col] = !!isDark;
+        reserved[row][col] = true;
+    };
+
+    const drawFinder = (row, col) => {
+        for (let dy = -1; dy <= 7; dy++) {
+            for (let dx = -1; dx <= 7; dx++) {
+                const moduleRow = row + dy;
+                const moduleCol = col + dx;
+                const inFinder = dy >= 0 && dy <= 6 && dx >= 0 && dx <= 6;
+                const isDark = inFinder && (
+                    dy === 0 || dy === 6 || dx === 0 || dx === 6 ||
+                    (dy >= 2 && dy <= 4 && dx >= 2 && dx <= 4)
+                );
+                setFunctionModule(moduleRow, moduleCol, isDark);
+            }
+        }
+    };
+
+    drawFinder(0, 0);
+    drawFinder(0, size - 7);
+    drawFinder(size - 7, 0);
+
+    for (let i = 8; i < size - 8; i++) {
+        const isDark = i % 2 === 0;
+        setFunctionModule(6, i, isDark);
+        setFunctionModule(i, 6, isDark);
+    }
+
+    for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+            const distance = Math.max(Math.abs(dx), Math.abs(dy));
+            setFunctionModule(30 + dy, 30 + dx, distance === 0 || distance === 2);
+        }
+    }
+
+    const drawFormatBits = (isReserveOnly = false) => {
+        const dataValue = (1 << 3) | mask;
+        let remainder = dataValue;
+        for (let i = 0; i < 10; i++) {
+            remainder = (remainder << 1) ^ (((remainder >>> 9) & 1) ? 0x537 : 0);
+        }
+        const bits = ((dataValue << 10) | remainder) ^ 0x5412;
+        const getBit = (index) => !isReserveOnly && (((bits >>> index) & 1) === 1);
+
+        for (let i = 0; i <= 5; i++) setFunctionModule(8, i, getBit(i));
+        setFunctionModule(8, 7, getBit(6));
+        setFunctionModule(8, 8, getBit(7));
+        setFunctionModule(7, 8, getBit(8));
+        for (let i = 9; i < 15; i++) setFunctionModule(14 - i, 8, getBit(i));
+        for (let i = 0; i < 8; i++) setFunctionModule(size - 1 - i, 8, getBit(i));
+        for (let i = 8; i < 15; i++) setFunctionModule(8, size - 15 + i, getBit(i));
+        setFunctionModule(size - 8, 8, !isReserveOnly);
+    };
+
+    drawFormatBits(true);
+
+    const allBits = [];
+    codewords.forEach((byte) => {
+        for (let bit = 7; bit >= 0; bit--) allBits.push(((byte >>> bit) & 1) === 1);
+    });
+
+    let bitIndex = 0;
+    let upward = true;
+    for (let col = size - 1; col > 0; col -= 2) {
+        if (col === 6) col--;
+
+        for (let rowStep = 0; rowStep < size; rowStep++) {
+            const row = upward ? size - 1 - rowStep : rowStep;
+
+            for (let offset = 0; offset < 2; offset++) {
+                const moduleCol = col - offset;
+                if (reserved[row][moduleCol]) continue;
+
+                let isDark = bitIndex < allBits.length ? allBits[bitIndex] : false;
+                bitIndex++;
+
+                if ((row + moduleCol) % 2 === 0) isDark = !isDark;
+                modules[row][moduleCol] = isDark;
+            }
         }
 
-        if (checkoutUpiId) checkoutUpiId.textContent = config.upi_id || 'Not available';
-        if (checkoutUpiQr && config.qr_image_url) {
-            checkoutUpiQr.src = config.qr_image_url;
-            checkoutUpiQr.style.display = 'block';
+        upward = !upward;
+    }
+
+    drawFormatBits(false);
+
+    const quietZone = 4;
+    const dimension = size + quietZone * 2;
+    let path = '';
+    for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+            if (modules[row][col]) {
+                path += `M${col + quietZone},${row + quietZone}h1v1h-1z`;
+            }
         }
-    } catch (error) {
-        if (checkoutUpiId) checkoutUpiId.textContent = 'Unable to load UPI details';
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dimension} ${dimension}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+async function syncPaymentSection() {
+    const amount = getCartTotal();
+    const cart = getCartItems();
+    let method = getSelectedPaymentMethod();
+
+    const walletInput = document.querySelector('input[name="payment_method"][value="Wallet"]');
+    const walletOption = walletInput ? walletInput.closest('.payment-method-option') : null;
+    const walletEnough = walletLoaded && walletBalance >= amount && amount > 0;
+
+    if (checkoutWalletBalance) checkoutWalletBalance.textContent = walletBalance.toFixed(2);
+    if (walletOptionMeta) {
+        walletOptionMeta.textContent = walletLoaded ? `₹${walletBalance.toFixed(2)} available` : 'Login to check';
+    }
+    if (checkoutWalletStatus) {
+        checkoutWalletStatus.textContent = walletEnough ?
+            'Balance is sufficient. Wallet will be deducted automatically.' :
+            'Insufficient balance. Please choose UPI or COD.';
+    }
+    if (walletInput) walletInput.disabled = !walletEnough;
+    if (walletOption) walletOption.classList.toggle('payment-option-disabled', !walletEnough);
+
+    if (method === 'Wallet' && !walletEnough) {
+        method = 'UPI';
+        setSelectedPaymentMethod(method);
+    }
+
+    if (upiConfigCard) upiConfigCard.classList.toggle('hidden', method !== 'UPI');
+    if (codPaymentCard) codPaymentCard.classList.toggle('hidden', method !== 'COD');
+    if (walletPaymentCard) walletPaymentCard.classList.toggle('hidden', method !== 'Wallet');
+
+    if (placeOrderBtn) {
+        if (method === 'COD') {
+            placeOrderBtn.textContent = 'Place COD Order';
+        } else if (method === 'Wallet') {
+            placeOrderBtn.textContent = 'Pay with Wallet';
+        } else {
+            placeOrderBtn.textContent = 'Continue to UPI Payment';
+        }
     }
 }
 
@@ -137,6 +373,7 @@ function renderCart() {
         cartTotal.textContent = '0.00';
         cartHandling.textContent = '0.00';
         cartItemsCount.textContent = '0 items in your order';
+        syncPaymentSection();
         return;
     }
 
@@ -185,6 +422,8 @@ function renderCart() {
     if (window.NextsUI) {
         window.NextsUI.applyImageFallbacks();
     }
+
+    syncPaymentSection();
 }
 
 window.updateQuantity = function(id, change) {
@@ -282,24 +521,16 @@ if (placeOrderBtn) {
         const subtotal = cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
         const total_price = subtotal + HANDLING_CHARGE;
 
-        placeOrderBtn.textContent = 'Placing Order...';
+        if (payment_method === 'Wallet' && (!walletLoaded || walletBalance < total_price)) {
+            if (window.NextsUI) window.NextsUI.showToast('Wallet balance is insufficient. Choose UPI or COD.', 'error');
+            await syncPaymentSection();
+            return;
+        }
+
+        placeOrderBtn.textContent = payment_method === 'UPI' ? 'Creating UPI Order...' : 'Placing Order...';
         placeOrderBtn.disabled = true;
 
         try {
-            let paymentProofBase64 = null;
-            if (payment_method === 'UPI') {
-                const selectedFile = paymentScreenshotInput ? paymentScreenshotInput.files[0] : null;
-                if (!selectedFile) {
-                    if (window.NextsUI) {
-                        window.NextsUI.showToast('Please upload payment screenshot for UPI orders', 'error');
-                    }
-                    placeOrderBtn.textContent = 'Place Order';
-                    placeOrderBtn.disabled = false;
-                    return;
-                }
-                paymentProofBase64 = await fileToBase64(selectedFile);
-            }
-
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: {
@@ -314,8 +545,7 @@ if (placeOrderBtn) {
                     customer_name,
                     payment_method,
                     is_subscription,
-                    delivery_slot,
-                    payment_proof_base64: paymentProofBase64
+                    delivery_slot
                 })
             });
 
@@ -325,9 +555,9 @@ if (placeOrderBtn) {
                 await window.NextsUI.clearCart();
                 currentCart = { items: [] };
 
-                const orderId = data.orderId;
+                const placedOrderId = data.orderId;
 
-                if (!orderId) {
+                if (!placedOrderId) {
                     if (window.NextsUI) {
                         window.NextsUI.showSuccessModal(
                             'Order Placed!',
@@ -337,8 +567,10 @@ if (placeOrderBtn) {
                             }
                         );
                     }
+                } else if (payment_method === 'UPI') {
+                    window.location.href = data.payment_url || `/payment/upi/${placedOrderId}`;
                 } else {
-                    window.location.href = `/invoice.html?orderId=${orderId}`;
+                    window.location.href = `/invoice.html?orderId=${placedOrderId}`;
                 }
             } else if (window.NextsUI) {
                 window.NextsUI.showToast(data.message || 'Failed to place order', 'error');
@@ -348,20 +580,35 @@ if (placeOrderBtn) {
                 window.NextsUI.showToast(error.message || 'Server error while placing order', 'error');
             }
         } finally {
-            placeOrderBtn.textContent = 'Place Order';
+            await syncPaymentSection();
             placeOrderBtn.disabled = false;
         }
     });
 }
 
 updateNavbarState();
-setupPaymentSelection();
-updatePaymentVisibility();
-fetchPaymentConfig();
+paymentMethodOptions.forEach((option) => {
+    option.addEventListener('click', () => {
+        const input = option.querySelector('input[name="payment_method"]');
+        if (!input || input.disabled) return;
+        setSelectedPaymentMethod(input.value);
+        syncPaymentSection();
+    });
 
+    const input = option.querySelector('input[name="payment_method"]');
+    if (input) {
+        input.addEventListener('change', () => {
+            if (!input.disabled) {
+                setSelectedPaymentMethod(input.value);
+                syncPaymentSection();
+            }
+        });
+    }
+});
 (async() => {
     try {
         await syncCart();
+        await fetchWalletBalance();
     } catch (error) {
         if (window.NextsUI && window.NextsUI.getAuthToken()) {
             window.NextsUI.showToast(error.message || 'Failed to load cart', 'error');

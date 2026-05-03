@@ -3,6 +3,14 @@ delete process.env[cloudinaryUrlEnvKey];
 
 const cloudinary = require('cloudinary').v2;
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp'
+]);
+const MAX_BASE64_IMAGE_BYTES = 2 * 1024 * 1024;
+
 if (!process.env.CLOUDINARY_CLOUD_NAME ||
     !process.env.CLOUDINARY_API_KEY ||
     !process.env.CLOUDINARY_API_SECRET) {
@@ -16,6 +24,27 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+function validateBase64Image(base64Data) {
+    if (!base64Data || typeof base64Data !== 'string') {
+        throw new Error('Image data is required');
+    }
+
+    const match = base64Data.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+    if (!match) {
+        throw new Error('Invalid image format');
+    }
+
+    const mimeType = match[1].toLowerCase();
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) {
+        throw new Error('Unsupported image type. Use JPEG, PNG, or WEBP');
+    }
+
+    const buffer = Buffer.from(match[2], 'base64');
+    if (buffer.length > MAX_BASE64_IMAGE_BYTES) {
+        throw new Error('Image too large. Max 2MB allowed');
+    }
+}
 
 function isCloudinaryConfigured() {
     return Boolean(
@@ -57,7 +86,20 @@ async function deleteCloudinaryImage(imageUrl) {
     }
 }
 
+async function uploadBase64Image(base64Data, folderName = 'uploads') {
+    validateBase64Image(base64Data);
+
+    const result = await cloudinary.uploader.upload(base64Data, {
+        folder: folderName,
+        resource_type: 'image',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+    });
+
+    return result.secure_url;
+}
+
 module.exports = {
     cloudinary,
-    deleteCloudinaryImage
+    deleteCloudinaryImage,
+    uploadBase64Image
 };

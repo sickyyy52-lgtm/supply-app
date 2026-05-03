@@ -40,7 +40,8 @@ function validateOrderCreate(req, res, next) {
         phone,
         customer_name,
         payment_method,
-        payment_proof_base64
+        payment_proof_base64,
+        payment_utr
     } = req.body || {};
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -51,17 +52,21 @@ function validateOrderCreate(req, res, next) {
     if (!isNonEmptyString(phone, 6, 30)) return badRequest(res, 'Valid phone is required');
     if (!isNonEmptyString(customer_name, 2, 120)) return badRequest(res, 'Valid customer name is required');
 
-    const method = String(payment_method || 'Cash on Delivery');
-    const allowedMethods = ['Cash on Delivery', 'UPI', 'Wallet'];
+    const rawMethod = String(payment_method || 'UPI');
+    const method = rawMethod === 'Cash on Delivery' ? 'COD' : rawMethod;
+    const allowedMethods = ['UPI', 'COD', 'Wallet'];
     if (!allowedMethods.includes(method)) return badRequest(res, 'Invalid payment method');
 
-    if (method === 'UPI') {
-        if (!payment_proof_base64 || typeof payment_proof_base64 !== 'string') {
-            return badRequest(res, 'Payment screenshot is required for UPI orders');
-        }
+    if (payment_proof_base64 && typeof payment_proof_base64 !== 'string') {
+        return badRequest(res, 'Invalid payment proof payload');
+    }
+
+    if (payment_utr !== undefined && typeof payment_utr !== 'string') {
+        return badRequest(res, 'Invalid UTR or transaction ID');
     }
 
     req.body.payment_method = method;
+    req.body.payment_utr = payment_utr ? payment_utr.trim().slice(0, 120) : '';
     req.body.address = address.trim();
     req.body.phone = phone.trim();
     req.body.customer_name = customer_name.trim();
@@ -70,7 +75,7 @@ function validateOrderCreate(req, res, next) {
 
 function validateOrderStatusUpdate(req, res, next) {
     const { status } = req.body || {};
-    const allowedStatuses = ['Pending', 'Approved', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Rejected'];
+    const allowedStatuses = ['Pending', 'Processing', 'Approved', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Rejected'];
     if (!allowedStatuses.includes(status)) {
         return badRequest(res, 'Invalid order status');
     }

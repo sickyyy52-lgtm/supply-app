@@ -8,7 +8,6 @@ const Wallet = require('../models/Wallet');
 const WalletTransaction = require('../models/WalletTransaction');
 const { nextSequence } = require('../models/Counter');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
-const { saveBase64Image } = require('../utils/imageStore');
 const { cleanDocs, cleanDoc } = require('../utils/format');
 const {
     validateOrderCreate,
@@ -33,6 +32,16 @@ async function ensureWallet(userId) {
     return Wallet.findOneAndUpdate({ user_id: userId }, { $setOnInsert: { user_id: userId, balance: 0 } }, { upsert: true, new: true });
 }
 
+router.post('/reserve-id', authMiddleware, async(req, res) => {
+    try {
+        const orderId = await nextSequence('order');
+        res.json({ orderId });
+    } catch (error) {
+        console.error('Order ID reservation error:', error);
+        res.status(500).json({ message: 'Error preparing order ID', error: error.message });
+    }
+});
+
 /**
  * CREATE ORDER
  */
@@ -40,6 +49,7 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
     const stockRollbacks = [];
     let createdOrderId = null;
     let createdProofId = null;
+    let walletDeduction = null;
 
     try {
         const {
@@ -50,7 +60,9 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
             payment_method,
             is_subscription,
             payment_proof_base64,
-            delivery_slot
+            payment_utr,
+            delivery_slot,
+            reserved_order_id
         } = req.body;
 
         const normalizedItems = [];
@@ -102,10 +114,19 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
             return res.status(400).json({ message: 'Invalid total amount' });
         }
 
-        const normalizedMethod = String(payment_method || 'Cash on Delivery');
-        let paymentStatus = 'not_required';
-        if (normalizedMethod === 'UPI') paymentStatus = 'submitted';
-        if (normalizedMethod === 'Wallet') paymentStatus = 'approved';
+        const normalizedMethod = String(payment_method || 'UPI') === 'Cash on Delivery' ? 'COD' : String(payment_method || 'UPI');
+        let paymentStatus = 'PENDING_VERIFICATION';
+        let orderStatus = 'Pending';
+
+        if (normalizedMethod === 'UPI') {
+            paymentStatus = 'PENDING_VERIFICATION';
+        } else if (normalizedMethod === 'COD') {
+            paymentStatus = 'COD_CONFIRMED';
+            orderStatus = 'Processing';
+        } else if (normalizedMethod === 'Wallet') {
+            paymentStatus = 'PAID';
+            orderStatus = 'Processing';
+        }
 
         if (normalizedMethod === 'Wallet') {
             const wallet = await ensureWallet(req.user.id);
@@ -139,8 +160,22 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
 
         const normalizedDeliverySlot = String(delivery_slot || '').trim();
 
+        let orderId = Number(reserved_order_id);
+        if (orderId) {
+            if (!Number.isInteger(orderId) || orderId <= 0) {
+                return res.status(400).json({ message: 'Invalid reserved order ID' });
+            }
+
+            const existingOrder = await Order.findOne({ id: orderId });
+            if (existingOrder) {
+                return res.status(409).json({ message: 'Reserved order ID was already used. Please refresh checkout and try again.' });
+            }
+        } else {
+            orderId = await nextSequence('order');
+        }
+
         const order = await Order.create({
-            id: await nextSequence('order'),
+            id: orderId,
             user_id: req.user.id,
             user_name: user ? user.name : '',
             email: user ? user.email : req.user.email,
@@ -149,7 +184,7 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
             phone,
             customer_name,
             payment_method: normalizedMethod,
-            status: 'Pending',
+            status: orderStatus,
             payment_status: paymentStatus,
             is_subscription: is_subscription ? 1 : 0,
             wallet_deducted: 0,
@@ -158,30 +193,49 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
         });
         createdOrderId = order.id;
 
-        if (normalizedMethod === 'UPI') {
-            const imageUrl = saveBase64Image(payment_proof_base64, 'order-payments');
-            const proof = await PaymentProof.create({
-                id: await nextSequence('paymentProof'),
-                user_id: req.user.id,
-                type: 'order',
-                reference_id: order.id,
-                amount: orderTotal,
-                image_url: imageUrl,
-                status: 'submitted'
-            });
-            createdProofId = proof.id;
+        if (normalizedMethod === 'Wallet') {
+            const wallet = await Wallet.findOneAndUpdate(
+                { user_id: req.user.id, balance: { $gte: orderTotal } },
+                { $inc: { balance: -orderTotal } },
+                { new: true }
+            );
 
-            order.payment_proof_id = proof.id;
+            if (!wallet) {
+                throw new Error('Insufficient wallet balance. Please choose UPI or COD.');
+            }
+
+            walletDeduction = { userId: req.user.id, amount: orderTotal };
+
+            await WalletTransaction.create({
+                id: await nextSequence('walletTransaction'),
+                user_id: req.user.id,
+                type: 'debit',
+                amount: orderTotal,
+                reason: 'Order payment',
+                reference_type: 'order',
+                reference_id: order.id
+            });
+
+            order.wallet_deducted = 1;
             await order.save();
         }
 
         res.json({
             message: normalizedMethod === 'UPI' ?
-                'Order submitted. Waiting for admin payment verification.' : 'Order placed successfully',
+                'Order created. Continue to UPI payment and upload proof.' :
+                normalizedMethod === 'Wallet' ?
+                'Wallet payment successful. Order is processing.' :
+                'COD order confirmed. Order is processing.',
             orderId: order.id,
+            payment_url: normalizedMethod === 'UPI' ? `/payment/upi/${order.id}` : null,
+            payment_status: order.payment_status,
+            status: order.status,
             total_price: orderTotal
         });
     } catch (error) {
+        if (walletDeduction) {
+            await Wallet.updateOne({ user_id: walletDeduction.userId }, { $inc: { balance: walletDeduction.amount } });
+        }
         if (createdProofId !== null) {
             await PaymentProof.deleteOne({ id: createdProofId });
         }
@@ -233,8 +287,8 @@ router.get('/:id', authMiddleware, async(req, res) => {
             customer_name: order.customer_name,
             phone: order.phone,
             address: order.address,
-            payment_method: order.payment_method || 'Cash on Delivery',
-            payment_status: order.payment_status || 'not_required',
+            payment_method: order.payment_method || 'COD',
+            payment_status: order.payment_status || 'PENDING_VERIFICATION',
             is_subscription: !!order.is_subscription,
             total_price: Number(order.total_price || 0),
             handling: 0,
@@ -302,7 +356,7 @@ router.put(
                     await wallet.save();
 
                     await WalletTransaction.create({
-                        id: await nextSequence('walletTxn'),
+                        id: await nextSequence('walletTransaction'),
                         user_id: order.user_id,
                         type: 'debit',
                         amount: total,
@@ -322,7 +376,7 @@ router.put(
                     await wallet.save();
 
                     await WalletTransaction.create({
-                        id: await nextSequence('walletTxn'),
+                        id: await nextSequence('walletTransaction'),
                         user_id: order.user_id,
                         type: 'credit',
                         amount: total,
@@ -333,9 +387,28 @@ router.put(
 
                     order.wallet_deducted = 0;
                 }
+
+                order.payment_status = newStatus === 'Rejected' || newStatus === 'Cancelled' ? 'REJECTED' : 'PAID';
             }
 
-            order.status = newStatus;
+            if (order.payment_method === 'COD') {
+                order.payment_status = newStatus === 'Rejected' || newStatus === 'Cancelled' ? 'REJECTED' : 'COD_CONFIRMED';
+            }
+
+            if (order.payment_method === 'UPI') {
+                if (newStatus === 'Approved') {
+                    order.payment_status = 'PAID';
+                    order.status = 'Processing';
+                } else if (newStatus === 'Rejected' || newStatus === 'Cancelled') {
+                    order.payment_status = 'REJECTED';
+                } else if (order.payment_status === 'not_required' || order.payment_status === 'submitted') {
+                    order.payment_status = 'WAITING_ADMIN_APPROVAL';
+                }
+            }
+
+            if (!(order.payment_method === 'UPI' && newStatus === 'Approved')) {
+                order.status = newStatus;
+            }
             await order.save();
 
             // Optional notification

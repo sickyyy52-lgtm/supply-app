@@ -16,6 +16,10 @@ const paymentSettingSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    last_valid_qr_image_url: {
+        type: String,
+        default: null
+    },
     is_active: {
         type: Number,
         default: 1,

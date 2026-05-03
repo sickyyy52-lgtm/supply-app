@@ -69,6 +69,10 @@ app.get('/cart', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
 
+app.get('/payment/upi/:orderId', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'upi-payment.html'));
+});
+
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });

@@ -31,6 +31,11 @@ const paymentProofSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    transaction_id: {
+        type: String,
+        default: null,
+        trim: true
+    },
     status: {
         type: String,
         enum: ['submitted', 'approved', 'rejected'],

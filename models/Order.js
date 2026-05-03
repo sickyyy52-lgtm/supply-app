@@ -64,8 +64,8 @@ const orderSchema = new mongoose.Schema({
     },
     payment_method: {
         type: String,
-        enum: ['Cash on Delivery', 'UPI', 'Wallet'],
-        default: 'Cash on Delivery'
+        enum: ['COD', 'Cash on Delivery', 'UPI', 'Wallet'],
+        default: 'COD'
     },
 
     // NEW: delivery slot
@@ -77,14 +77,24 @@ const orderSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['Pending', 'Approved', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Rejected'],
+        enum: ['Pending', 'Processing', 'Approved', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Rejected'],
         default: 'Pending',
         index: true
     },
     payment_status: {
         type: String,
-        enum: ['not_required', 'submitted', 'approved', 'rejected'],
-        default: 'not_required'
+        enum: [
+            'PENDING_VERIFICATION',
+            'WAITING_ADMIN_APPROVAL',
+            'PAID',
+            'COD_CONFIRMED',
+            'REJECTED',
+            'not_required',
+            'submitted',
+            'approved',
+            'rejected'
+        ],
+        default: 'PENDING_VERIFICATION'
     },
     payment_proof_id: {
         type: Number,

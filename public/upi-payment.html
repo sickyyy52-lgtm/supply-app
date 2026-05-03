@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexts - UPI Payment</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body class="cart-body">
+    <div class="cart-bg-shape cart-shape-1"></div>
+    <div class="cart-bg-shape cart-shape-2"></div>
+
+    <header class="navbar glass-nav">
+        <div class="nav-left">
+            <a href="/" class="brand">
+                <span class="brand-dot"></span>
+                <span class="brand-text">Nexts</span>
+            </a>
+        </div>
+
+        <div class="nav-center">
+            <div class="cart-page-title-pill">UPI Payment</div>
+        </div>
+
+        <nav class="nav-right">
+            <a href="/cart" class="nav-link">Cart</a>
+            <a href="/dashboard" class="nav-link">Dashboard</a>
+        </nav>
+    </header>
+
+    <main class="cart-shell upi-payment-shell">
+        <section class="cart-hero reveal active">
+            <div>
+                <p class="section-tag">MANUAL VERIFICATION</p>
+                <h1>Complete UPI payment</h1>
+                <p>Pay using your preferred UPI app or QR, then upload screenshot proof. Admin approval confirms payment.</p>
+            </div>
+            <div class="cart-hero-badge">
+                <span>₹</span>
+                <div>
+                    <strong>Secure MVP Flow</strong>
+                    <small>No gateway. Screenshot verification required.</small>
+                </div>
+            </div>
+        </section>
+
+        <section class="upi-payment-page-grid">
+            <div class="checkout-card reveal active upi-payment-main-card">
+                <div class="checkout-head">
+                    <h3>Pay via Apps</h3>
+                    <p>Tap one icon. The same UPI intent powers every app button.</p>
+                </div>
+
+                <div class="upi-payment-box">
+                    <span class="upi-fast-label" id="upi-payment-status">PENDING_VERIFICATION</span>
+
+                    <div class="upi-payment-head">
+                        <div>
+                            <h4>Order <span id="upi-order-title">#----</span></h4>
+                            <p>Amount payable: <strong>₹<span id="upi-amount">0.00</span></strong></p>
+                        </div>
+                        <div class="upi-amount-pill">₹<span id="upi-amount-pill">0.00</span></div>
+                    </div>
+
+                    <div class="upi-meta-row">
+                        <span>UPI ID: <strong id="upi-id">9579544462@ptyes</strong></span>
+                        <span>Transaction Note: <strong id="upi-note">----</strong></span>
+                    </div>
+
+                    <div class="upi-intent-buttons upi-icon-buttons">
+                        <button type="button" class="upi-app-btn upi-app-icon-btn upi-brand-gpay" data-app="Google Pay" aria-label="Pay with Google Pay">
+                            <span aria-hidden="true">G</span>
+                        </button>
+                        <button type="button" class="upi-app-btn upi-app-icon-btn upi-brand-phonepe" data-app="PhonePe" aria-label="Pay with PhonePe">
+                            <span aria-hidden="true">पे</span>
+                        </button>
+                        <button type="button" class="upi-app-btn upi-app-icon-btn upi-brand-paytm" data-app="Paytm" aria-label="Pay with Paytm">
+                            <span aria-hidden="true">P</span>
+                        </button>
+                    </div>
+
+                    <details class="upi-qr-details" id="upi-qr-details">
+                        <summary>OR Scan QR Code</summary>
+                        <div class="upi-qr-panel">
+                            <img id="upi-qr" src="" alt="UPI QR code" />
+                            <small>QR is generated from the same amount and order ID.</small>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <aside class="checkout-card reveal active upi-proof-card">
+                <div class="checkout-head">
+                    <h3>Upload Proof</h3>
+                    <p>Upload screenshot after payment to confirm order.</p>
+                </div>
+
+                <form id="upi-proof-form" class="dashboard-profile-form">
+                    <div class="input-group">
+                        <label>Payment Screenshot *</label>
+                        <input type="file" id="upi-proof-file" accept="image/png,image/jpeg,image/jpg,image/webp" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label>UTR / Transaction ID</label>
+                        <input type="text" id="upi-utr" placeholder="Optional UTR or transaction ID" />
+                    </div>
+
+                    <div class="payment-flow-note">
+                        <strong>Important</strong>
+                        <p>UPI intent opening does not confirm payment. Payment is valid only after admin verifies the screenshot.</p>
+                    </div>
+
+                    <button type="submit" class="checkout-submit-btn" id="upi-proof-submit">Submit Proof for Verification</button>
+                </form>
+            </aside>
+        </section>
+    </main>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/upi-payment.js"></script>
+</body>
+
+</html>

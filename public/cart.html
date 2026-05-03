@@ -124,36 +124,50 @@
                         </div>
 
                         <div class="input-group full-width">
-                            <label>Payment Method</label>
-                            <div class="payment-methods">
-                                <label class="payment-option active-payment">
-                                    <input type="radio" name="payment_method" value="Cash on Delivery" checked />
-                                    <span>Cash on Delivery</span>
+                            <label>Choose Payment Method</label>
+                            <div class="payment-methods checkout-methods">
+                                <label class="payment-option payment-method-option active-payment" data-method="UPI">
+                                    <input type="radio" name="payment_method" value="UPI" checked />
+                                    <span>UPI</span>
+                                    <small>Manual verification</small>
                                 </label>
 
-                                <label class="payment-option">
-                                    <input type="radio" name="payment_method" value="UPI" />
-                                    <span>UPI (Manual Verification)</span>
+                                <label class="payment-option payment-method-option" data-method="COD">
+                                    <input type="radio" name="payment_method" value="COD" />
+                                    <span>COD</span>
+                                    <small>Pay on delivery</small>
                                 </label>
 
-                                <label class="payment-option">
+                                <label class="payment-option payment-method-option" data-method="Wallet">
                                     <input type="radio" name="payment_method" value="Wallet" />
-                                    <span>Wallet Credits</span>
+                                    <span>Wallet</span>
+                                    <small id="wallet-option-meta">Checking balance...</small>
                                 </label>
                             </div>
                         </div>
 
-                        <div id="upi-config-card" class="input-group full-width hidden">
-                            <label>Pay using UPI</label>
-                            <div style="border:1px solid #e4e7ec; border-radius:12px; padding:12px; background:#fff;">
-                                <p style="margin-bottom:8px;">UPI ID: <strong id="checkout-upi-id">Loading...</strong></p>
-                                <img id="checkout-upi-qr" src="" alt="UPI QR" style="max-width:220px; width:100%; border-radius:8px; display:none;" />
+                        <div id="upi-config-card" class="input-group full-width checkout-payment-note">
+                            <label>UPI Payment</label>
+                            <div class="payment-flow-note">
+                                <strong>PENDING_VERIFICATION → WAITING_ADMIN_APPROVAL</strong>
+                                <p>You will be redirected to the UPI payment page after order creation. Pay via app or QR, then upload screenshot proof for admin verification.</p>
                             </div>
                         </div>
 
-                        <div id="upi-proof-card" class="input-group full-width hidden">
-                            <label>Upload Payment Screenshot</label>
-                            <input type="file" id="payment_screenshot" accept="image/png,image/jpeg,image/jpg,image/webp" />
+                        <div id="cod-payment-card" class="input-group full-width checkout-payment-note hidden">
+                            <label>COD Order</label>
+                            <div class="payment-flow-note">
+                                <strong>COD_CONFIRMED → PROCESSING</strong>
+                                <p>Your order will be created immediately. Please keep exact payment ready at delivery.</p>
+                            </div>
+                        </div>
+
+                        <div id="wallet-payment-card" class="input-group full-width checkout-payment-note hidden">
+                            <label>Wallet Payment</label>
+                            <div class="payment-flow-note">
+                                <strong>Wallet Balance: &#8377;<span id="checkout-wallet-balance">0.00</span></strong>
+                                <p id="checkout-wallet-status">Checking wallet balance...</p>
+                            </div>
                         </div>
 
                         <div class="input-group full-width">
@@ -165,7 +179,7 @@
                     </div>
 
                     <button id="place-order-btn" class="checkout-submit-btn">
-                        Place Order
+                        Continue to UPI Payment
                     </button>
                 </div>
             </aside>

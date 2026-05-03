@@ -93,6 +93,15 @@ function formatDateTime(value) {
     return new Date(value).toLocaleString();
 }
 
+function formatPaymentMethod(method) {
+    if (method === 'COD' || method === 'Cash on Delivery') return 'COD';
+    return method || '-';
+}
+
+function formatPaymentStatus(status) {
+    return String(status || '-').replace(/_/g, ' ');
+}
+
 if (adminLogoutBtn) {
     adminLogoutBtn.addEventListener('click', () => {
         localStorage.removeItem('token');
@@ -273,8 +282,8 @@ function renderOrders(orders) {
                   order.delivery_slot === 'evening' ? 'Evening (5–8 PM)' :
                   'Any'
                 }</p>
-                <p><strong>Payment:</strong> ${order.payment_method || 'Cash on Delivery'}</p>
-                <p><strong>Payment Status:</strong> ${order.payment_status || 'not_required'}</p>
+                <p><strong>Payment:</strong> ${formatPaymentMethod(order.payment_method)}</p>
+                <p><strong>Payment Status:</strong> ${formatPaymentStatus(order.payment_status)}</p>
                 <p><strong>Subscription:</strong> ${order.is_subscription ? 'Yes' : 'No'}</p>
                 <p><strong>Date:</strong> ${order.created_at ? new Date(order.created_at).toLocaleString() : '-'}</p>
             </div>
@@ -286,6 +295,7 @@ function renderOrders(orders) {
 
             <div class="admin-order-quick-actions">
                 <button class="admin-btn quick-status-btn" onclick="updateOrderStatus(${order.id}, 'Approved')">Approve</button>
+                <button class="admin-btn quick-status-btn" onclick="updateOrderStatus(${order.id}, 'Processing')">Processing</button>
                 <button class="admin-btn quick-status-btn" onclick="updateOrderStatus(${order.id}, 'Packed')">Packed</button>
                 <button class="admin-btn quick-status-btn" onclick="updateOrderStatus(${order.id}, 'Shipped')">Shipped</button>
                 <button class="admin-btn quick-status-btn" onclick="updateOrderStatus(${order.id}, 'Delivered')">Delivered</button>
@@ -299,6 +309,7 @@ function renderOrders(orders) {
             <div style="margin-top:16px;">
                 <select class="admin-search-input order-status-select" data-id="${order.id}">
                     <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                    <option value="Processing" ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
                     <option value="Approved" ${order.status === 'Approved' ? 'selected' : ''}>Approved</option>
                     <option value="Packed" ${order.status === 'Packed' ? 'selected' : ''}>Packed</option>
                     <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -957,7 +968,7 @@ if (exportOrdersBtn) {
                 order.phone,
                 order.address,
                 order.total_price,
-                order.payment_method || 'Cash on Delivery',
+                formatPaymentMethod(order.payment_method),
                 order.status || 'Pending',
                 order.created_at
             ]);
@@ -993,13 +1004,28 @@ async function fetchPaymentConfig() {
         const data = await parseResponse(res);
         if (!res.ok) throw new Error(data.message || 'Failed to fetch payment config');
 
+        const qrUrl = data?.qr_image_url || data?.last_valid_qr_image_url || '';
         adminUpiIdInput.value = data?.upi_id || '';
         if (adminCurrentQrWrap) {
-            if (data?.qr_image_url) {
-                adminCurrentQrWrap.innerHTML = `
-                    <p style="margin-bottom:6px;">Current QR:</p>
-                    <img src="${data.qr_image_url}" alt="Current QR" style="width:160px; max-width:100%; border-radius:8px;" />
-                `;
+            adminCurrentQrWrap.innerHTML = '';
+
+            if (qrUrl) {
+                const label = document.createElement('p');
+                label.style.marginBottom = '6px';
+                label.textContent = 'Current QR:';
+
+                const img = document.createElement('img');
+                img.src = qrUrl;
+                img.alt = 'Current QR';
+                img.style.width = '160px';
+                img.style.maxWidth = '100%';
+                img.style.borderRadius = '8px';
+                img.onerror = () => {
+                    img.style.display = 'none';
+                    label.textContent = 'Saved QR could not be loaded. Upload a new QR to replace it.';
+                };
+
+                adminCurrentQrWrap.append(label, img);
             } else {
                 adminCurrentQrWrap.innerHTML = '<p style="color:#667085;">No QR image configured.</p>';
             }
@@ -1022,6 +1048,16 @@ if (paymentConfigForm) {
             const file = adminUpiQrFileInput ? adminUpiQrFileInput.files[0] : null;
             const payload = { upi_id: upiId };
             if (file) {
+                if (!PRODUCT_IMAGE_TYPES.has(file.type)) {
+                    if (window.NextsUI) window.NextsUI.showToast('Only JPEG, PNG, and WEBP QR images are allowed', 'error');
+                    return;
+                }
+
+                if (file.size > PRODUCT_IMAGE_MAX_SIZE) {
+                    if (window.NextsUI) window.NextsUI.showToast('QR image must be 2MB or smaller', 'error');
+                    return;
+                }
+
                 payload.qr_image_base64 = await fileToBase64(file);
             }
 
@@ -1070,6 +1106,16 @@ function renderPendingOrderProofs(proofs) {
                 <button class="admin-btn delete-btn proof-reject-btn" data-id="${proof.proof_id}">Reject</button>
             </div>
         `;
+
+        const proofDetails = document.createElement('div');
+        proofDetails.innerHTML = `
+            <p>Payment Method: UPI</p>
+            <p>Payment Status: ${formatPaymentStatus(proof.payment_status)}</p>
+            <p>UTR / Transaction ID: ${proof.transaction_id || '-'}</p>
+            <img src="${proof.image_url}" alt="Payment screenshot for order ${proof.order_id}" style="width:100%; max-width:220px; border-radius:12px; margin-top:8px; border:1px solid #e5e5e5;" />
+        `;
+        const proofActions = item.querySelector('.proof-approve-btn')?.parentElement;
+        item.insertBefore(proofDetails, proofActions || null);
         pendingOrderProofsContainer.appendChild(item);
     });
 
