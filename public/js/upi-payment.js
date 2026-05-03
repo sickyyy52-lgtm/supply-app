@@ -3,6 +3,7 @@ const user = JSON.parse(localStorage.getItem('user') || 'null');
 
 const NEXTS_UPI_ID = '9579544462@ptyes';
 const NEXTS_PAYEE_NAME = 'Nexts';
+const UPI_CHECKOUT_KEY = 'nexts_upi_checkout';
 const PAYMENT_PROOF_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
 const PAYMENT_PROOF_MAX_SIZE = 2 * 1024 * 1024;
 
@@ -21,6 +22,7 @@ const upiAppButtons = document.querySelectorAll('.upi-app-btn');
 
 let currentOrder = null;
 let currentUpiUrl = '';
+let checkoutPayload = null;
 
 if (!token || !user) {
     window.location.href = '/login';
@@ -271,13 +273,7 @@ function renderOrder(order) {
     }
 }
 
-async function loadOrder() {
-    const orderId = getOrderIdFromPath();
-    if (!orderId) {
-        showToast('Invalid UPI payment link', 'error');
-        return;
-    }
-
+async function loadExistingOrder(orderId) {
     const res = await fetch(`/api/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -296,6 +292,77 @@ async function loadOrder() {
     }
 
     renderOrder(data);
+}
+
+function readCheckoutPayload() {
+    const rawPayload = sessionStorage.getItem(UPI_CHECKOUT_KEY);
+    if (!rawPayload) {
+        throw new Error('Checkout session expired. Please review your cart again.');
+    }
+
+    let parsedPayload = null;
+    try {
+        parsedPayload = JSON.parse(rawPayload);
+    } catch (error) {
+        throw new Error('Checkout session is invalid. Please review your cart again.');
+    }
+
+    if (!Array.isArray(parsedPayload.items) || parsedPayload.items.length === 0) {
+        throw new Error('Your checkout cart is empty. Please add products again.');
+    }
+
+    const amount = Number(parsedPayload.total_price || 0);
+    if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error('Checkout amount is invalid. Please review your cart again.');
+    }
+
+    return parsedPayload;
+}
+
+function saveCheckoutPayload(payload) {
+    sessionStorage.setItem(UPI_CHECKOUT_KEY, JSON.stringify(payload));
+}
+
+async function reserveOrderIdForCheckout(payload) {
+    if (Number.isInteger(Number(payload.reserved_order_id)) && Number(payload.reserved_order_id) > 0) {
+        return Number(payload.reserved_order_id);
+    }
+
+    const res = await fetch('/api/orders/reserve-id', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await parseResponse(res);
+
+    if (!res.ok || !data.orderId) {
+        throw new Error(data.message || 'Failed to prepare UPI payment');
+    }
+
+    payload.reserved_order_id = Number(data.orderId);
+    saveCheckoutPayload(payload);
+    return payload.reserved_order_id;
+}
+
+async function loadCheckoutPayment() {
+    checkoutPayload = readCheckoutPayload();
+    const reservedOrderId = await reserveOrderIdForCheckout(checkoutPayload);
+
+    renderOrder({
+        id: reservedOrderId,
+        total_price: checkoutPayload.total_price,
+        payment_method: 'UPI',
+        payment_status: 'PENDING_VERIFICATION'
+    });
+}
+
+async function loadPaymentPage() {
+    const orderId = getOrderIdFromPath();
+    if (orderId) {
+        await loadExistingOrder(orderId);
+        return;
+    }
+
+    await loadCheckoutPayment();
 }
 
 upiAppButtons.forEach((button) => {
@@ -336,26 +403,53 @@ if (proofForm) {
 
         try {
             const paymentProofBase64 = await fileToBase64(file);
-            const res = await fetch(`/api/payments/orders/${currentOrder.id}/proof`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    payment_proof_base64: paymentProofBase64,
-                    payment_utr: utrInput.value.trim()
-                })
-            });
+            const proofPayload = {
+                payment_proof_base64: paymentProofBase64,
+                payment_utr: utrInput.value.trim()
+            };
+            const res = checkoutPayload ?
+                await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        ...checkoutPayload,
+                        payment_method: 'UPI',
+                        reserved_order_id: currentOrder.id,
+                        ...proofPayload
+                    })
+                }) :
+                await fetch(`/api/payments/orders/${currentOrder.id}/proof`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify(proofPayload)
+                });
             const data = await parseResponse(res);
 
             if (!res.ok) {
                 throw new Error(data.message || 'Failed to upload payment proof');
             }
 
+            const finalOrderId = data.orderId || currentOrder.id;
+            if (checkoutPayload) {
+                sessionStorage.removeItem(UPI_CHECKOUT_KEY);
+                if (window.NextsUI && typeof window.NextsUI.clearCart === 'function') {
+                    try {
+                        await window.NextsUI.clearCart();
+                    } catch (cartError) {
+                        console.error('Cart clear after UPI order failed:', cartError);
+                    }
+                }
+            }
+
             showToast(data.message || 'Payment proof uploaded', 'success');
             setTimeout(() => {
-                window.location.href = `/invoice.html?orderId=${currentOrder.id}`;
+                window.location.href = `/invoice.html?orderId=${finalOrderId}`;
             }, 900);
         } catch (error) {
             showToast(error.message || 'Failed to upload payment proof', 'error');
@@ -365,6 +459,9 @@ if (proofForm) {
     });
 }
 
-loadOrder().catch((error) => {
+loadPaymentPage().catch((error) => {
     showToast(error.message || 'Failed to load UPI payment page', 'error');
+    setTimeout(() => {
+        window.location.href = '/cart';
+    }, 1200);
 });

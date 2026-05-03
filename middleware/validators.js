@@ -61,6 +61,10 @@ function validateOrderCreate(req, res, next) {
         return badRequest(res, 'Invalid payment proof payload');
     }
 
+    if (method === 'UPI' && !payment_proof_base64) {
+        return badRequest(res, 'Payment screenshot is required for UPI orders');
+    }
+
     if (payment_utr !== undefined && typeof payment_utr !== 'string') {
         return badRequest(res, 'Invalid UTR or transaction ID');
     }

@@ -2292,6 +2292,164 @@ body {
 }
 
 
+/* Business Analytics Room */
+
+.analytics-room {
+    display: grid;
+    gap: 18px;
+}
+
+.analytics-room-head,
+.analytics-history-card,
+.analytics-chart-card,
+.analytics-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+.analytics-room-head {
+    border-radius: 28px;
+    padding: 24px;
+}
+
+.analytics-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.analytics-kpi-card {
+    border-radius: 22px;
+    padding: 20px;
+}
+
+.analytics-kpi-card span,
+.analytics-history-summary span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.analytics-kpi-card strong,
+.analytics-history-summary strong {
+    color: #0a0a0a;
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.analytics-kpi-card b,
+.analytics-history-summary b {
+    font: inherit;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.analytics-grid-live {
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+}
+
+.analytics-chart-card,
+.analytics-history-card {
+    border-radius: 26px;
+    padding: 22px;
+    min-width: 0;
+}
+
+.analytics-chart-card-wide {
+    min-height: 360px;
+}
+
+.analytics-chart-card-flat {
+    box-shadow: none;
+    background: #f9f9f9;
+}
+
+.analytics-chart-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.analytics-chart-head h3 {
+    color: #0a0a0a;
+    font-size: 22px;
+    letter-spacing: -0.4px;
+}
+
+.analytics-chart-head small {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.analytics-insights-list {
+    display: grid;
+    gap: 10px;
+}
+
+.analytics-insight-item {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 10px;
+    align-items: center;
+    border-radius: 16px;
+    padding: 12px;
+    background: #f9f9f9;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.analytics-insight-item span {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #0a0a0a;
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.analytics-insight-item p {
+    color: #0a0a0a;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.analytics-history-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+.analytics-history-summary {
+    display: grid;
+    gap: 12px;
+}
+
+.analytics-history-summary div {
+    border-radius: 18px;
+    padding: 16px;
+    background: #f9f9f9;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.analytics-chart-card canvas,
+.analytics-history-card canvas {
+    width: 100% !important;
+}
+
+
 /* Payment methods */
 
 .payment-methods {
@@ -4726,6 +4884,49 @@ svg {
     .site-footer-links a,
     .site-footer-contact a {
         min-height: 32px;
+        font-size: 13px;
+    }
+    .analytics-room {
+        gap: 10px;
+    }
+    .analytics-room-head,
+    .analytics-chart-card,
+    .analytics-history-card,
+    .analytics-kpi-card {
+        padding: 12px;
+        border-radius: 14px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    .analytics-kpi-grid,
+    .analytics-grid,
+    .analytics-grid-live,
+    .analytics-history-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .analytics-kpi-card strong,
+    .analytics-history-summary strong {
+        font-size: 20px;
+    }
+    .analytics-chart-head {
+        margin-bottom: 10px;
+    }
+    .analytics-chart-head h3 {
+        font-size: 16px;
+    }
+    .analytics-chart-card-wide {
+        min-height: auto;
+    }
+    .analytics-insight-item {
+        grid-template-columns: 30px 1fr;
+        padding: 10px;
+        border-radius: 12px;
+    }
+    .analytics-insight-item span {
+        width: 30px;
+        height: 30px;
+    }
+    .analytics-insight-item p {
         font-size: 13px;
     }
     .upi-payment-box {

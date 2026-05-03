@@ -17,6 +17,7 @@ const isSubscriptionInput = document.getElementById('is_subscription');
 
 const NEXTS_UPI_ID = '9579544462@ptyes';
 const NEXTS_PAYEE_NAME = 'Nexts';
+const UPI_CHECKOUT_KEY = 'nexts_upi_checkout';
 const HANDLING_CHARGE = 0;
 let currentCart = { items: [] };
 let walletBalance = 0;
@@ -527,7 +528,27 @@ if (placeOrderBtn) {
             return;
         }
 
-        placeOrderBtn.textContent = payment_method === 'UPI' ? 'Creating UPI Order...' : 'Placing Order...';
+        if (payment_method === 'UPI') {
+            const checkoutPayload = {
+                items,
+                total_price,
+                address,
+                phone,
+                customer_name,
+                payment_method,
+                is_subscription,
+                delivery_slot,
+                created_at: new Date().toISOString()
+            };
+
+            sessionStorage.setItem(UPI_CHECKOUT_KEY, JSON.stringify(checkoutPayload));
+            placeOrderBtn.textContent = 'Opening UPI Payment...';
+            placeOrderBtn.disabled = true;
+            window.location.href = '/payment/upi';
+            return;
+        }
+
+        placeOrderBtn.textContent = 'Placing Order...';
         placeOrderBtn.disabled = true;
 
         try {
@@ -567,8 +588,6 @@ if (placeOrderBtn) {
                             }
                         );
                     }
-                } else if (payment_method === 'UPI') {
-                    window.location.href = data.payment_url || `/payment/upi/${placedOrderId}`;
                 } else {
                     window.location.href = `/invoice.html?orderId=${placedOrderId}`;
                 }

@@ -61,6 +61,18 @@ const pendingOrderProofsContainer = document.getElementById('pending-order-proof
 const pendingWalletTopupsContainer = document.getElementById('pending-wallet-topups');
 const passwordResetRequestsContainer = document.getElementById('password-reset-requests');
 const refreshPasswordResetsBtn = document.getElementById('refresh-password-resets-btn');
+const refreshAnalyticsBtn = document.getElementById('refresh-analytics-btn');
+const analyticsLiveRevenue = document.getElementById('analytics-live-revenue');
+const analyticsLiveProfit = document.getElementById('analytics-live-profit');
+const analyticsLiveConversion = document.getElementById('analytics-live-conversion');
+const analyticsLivePaidOrders = document.getElementById('analytics-live-paid-orders');
+const analyticsLiveUpdated = document.getElementById('analytics-live-updated');
+const analyticsInsights = document.getElementById('analytics-insights');
+const analyticsMonthSelect = document.getElementById('analytics-month-select');
+const historyMonthRevenue = document.getElementById('history-month-revenue');
+const historyMonthProfit = document.getElementById('history-month-profit');
+const historyBestDay = document.getElementById('history-best-day');
+const historyWorstDay = document.getElementById('history-worst-day');
 
 let allProducts = [];
 let allOrders = [];
@@ -68,6 +80,17 @@ let allUsers = [];
 let allPasswordResetRequests = [];
 let currentProductImageUrl = '';
 let latestApprovedResetPassword = null;
+let analyticsLoaded = false;
+let analyticsLiveCursor = '';
+let analyticsPollTimer = null;
+let analyticsDailyStats = [];
+let analyticsMonthlyStats = [];
+let liveRevenueChart = null;
+let dailyRevenueChart = null;
+let profitRevenueChart = null;
+let paymentMethodChart = null;
+let lossChart = null;
+let monthlyHistoryChart = null;
 
 async function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -118,6 +141,10 @@ document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.classList.add('active');
         const tab = document.getElementById(btn.dataset.tab);
         if (tab) tab.classList.add('active');
+
+        if (btn.dataset.tab === 'analytics-tab') {
+            setTimeout(loadAnalyticsRoom, 50);
+        }
     });
 });
 
@@ -1238,6 +1265,413 @@ async function reviewTopup(topupId, status) {
     } catch (error) {
         if (window.NextsUI) window.NextsUI.showToast(error.message || 'Failed to review top-up', 'error');
     }
+}
+
+function formatMoney(value) {
+    return Number(value || 0).toFixed(2);
+}
+
+function chartReady() {
+    return typeof window.Chart !== 'undefined';
+}
+
+function chartGridColor() {
+    return 'rgba(0,0,0,0.08)';
+}
+
+function chartTextColor() {
+    return '#444444';
+}
+
+function baseChartOptions(extra = {}) {
+    return {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: {
+                labels: {
+                    color: chartTextColor(),
+                    boxWidth: 12,
+                    font: { weight: '700' }
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: chartTextColor(), maxRotation: 0 },
+                grid: { color: chartGridColor() }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: chartTextColor() },
+                grid: { color: chartGridColor() }
+            }
+        },
+        ...extra
+    };
+}
+
+function showAnalyticsFallback(message) {
+    if (analyticsInsights && !chartReady()) {
+        analyticsInsights.innerHTML = `<div class="admin-empty-state">${escapeHtml(message)}</div>`;
+    }
+}
+
+async function analyticsRequest(path) {
+    const res = await fetch(path, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await parseResponse(res);
+    if (!res.ok) throw new Error(data.message || 'Failed to load analytics');
+    return data;
+}
+
+function setAnalyticsText(element, value) {
+    if (element) element.textContent = value;
+}
+
+function appendLivePoint(point) {
+    if (!liveRevenueChart) return;
+
+    liveRevenueChart.data.labels.push(point.label || new Date(point.time).toLocaleTimeString());
+    liveRevenueChart.data.datasets[0].data.push(Number(point.revenue || 0));
+
+    if (liveRevenueChart.data.labels.length > 60) {
+        liveRevenueChart.data.labels.shift();
+        liveRevenueChart.data.datasets[0].data.shift();
+    }
+}
+
+function renderLiveMetrics(data, incremental = false) {
+    const summary = data.summary || {};
+    const points = Array.isArray(data.points) ? data.points : [];
+
+    setAnalyticsText(analyticsLiveRevenue, formatMoney(summary.revenue));
+    setAnalyticsText(analyticsLiveProfit, formatMoney(summary.profit));
+    setAnalyticsText(analyticsLiveConversion, formatMoney(summary.conversion_rate));
+    setAnalyticsText(analyticsLivePaidOrders, String(summary.paid_orders || 0));
+    setAnalyticsText(
+        analyticsLiveUpdated,
+        `Updated ${new Date(data.server_time || Date.now()).toLocaleTimeString()}`
+    );
+
+    if (!chartReady()) {
+        showAnalyticsFallback('Chart.js could not load. Analytics APIs are still active.');
+        return;
+    }
+
+    if (!liveRevenueChart) {
+        const canvas = document.getElementById('live-revenue-chart');
+        if (!canvas) return;
+
+        const labels = points.length ? points.map((point) => point.label) : [new Date().toLocaleTimeString()];
+        const values = points.length ? points.map((point) => Number(point.revenue || 0)) : [Number(summary.revenue || 0)];
+
+        liveRevenueChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Live Revenue',
+                    data: values,
+                    borderColor: '#0a0a0a',
+                    backgroundColor: 'rgba(0,0,0,0.08)',
+                    borderWidth: 3,
+                    pointRadius: 2,
+                    tension: 0.35,
+                    fill: true
+                }]
+            },
+            options: baseChartOptions({
+                animation: { duration: 420 },
+                plugins: {
+                    legend: { display: false }
+                }
+            })
+        });
+    } else if (incremental) {
+        points.forEach(appendLivePoint);
+        liveRevenueChart.update('none');
+    } else {
+        liveRevenueChart.data.labels = points.length ? points.map((point) => point.label) : [new Date().toLocaleTimeString()];
+        liveRevenueChart.data.datasets[0].data = points.length ? points.map((point) => Number(point.revenue || 0)) : [Number(summary.revenue || 0)];
+        liveRevenueChart.update();
+    }
+
+    if (data.cursor) analyticsLiveCursor = data.cursor;
+}
+
+async function fetchLiveAnalytics(incremental = false) {
+    const query = incremental && analyticsLiveCursor ? `?since=${encodeURIComponent(analyticsLiveCursor)}` : '';
+    const data = await analyticsRequest(`/api/live-metrics${query}`);
+    renderLiveMetrics(data, incremental);
+}
+
+function createOrUpdateChart(existingChart, canvasId, config) {
+    if (!chartReady()) {
+        showAnalyticsFallback('Chart.js could not load. Please check the CDN script.');
+        return null;
+    }
+
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return existingChart;
+
+    if (existingChart) {
+        existingChart.data = config.data;
+        existingChart.options = config.options;
+        existingChart.update();
+        return existingChart;
+    }
+
+    return new Chart(canvas, config);
+}
+
+function renderDailyAnalytics(data) {
+    analyticsDailyStats = Array.isArray(data.stats) ? data.stats : [];
+    const lastSeven = analyticsDailyStats.slice(-7);
+    const labels = lastSeven.map((stat) => stat.day_label || stat.date);
+    const revenue = lastSeven.map((stat) => Number(stat.revenue || 0));
+    const profit = lastSeven.map((stat) => Number(stat.profit || 0));
+    const codRevenue = lastSeven.reduce((sum, stat) => sum + Number(stat.cod_revenue || 0), 0);
+    const upiRevenue = lastSeven.reduce((sum, stat) => sum + Number(stat.upi_revenue || 0), 0);
+    const walletRevenue = lastSeven.reduce((sum, stat) => sum + Number(stat.wallet_revenue || 0), 0);
+
+    dailyRevenueChart = createOrUpdateChart(dailyRevenueChart, 'daily-revenue-chart', {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Revenue',
+                data: revenue,
+                backgroundColor: '#0a0a0a',
+                borderRadius: 8
+            }]
+        },
+        options: baseChartOptions({ plugins: { legend: { display: false } } })
+    });
+
+    profitRevenueChart = createOrUpdateChart(profitRevenueChart, 'profit-revenue-chart', {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: revenue,
+                    borderColor: '#0a0a0a',
+                    backgroundColor: 'rgba(0,0,0,0.08)',
+                    borderWidth: 3,
+                    tension: 0.32
+                },
+                {
+                    label: 'Profit',
+                    data: profit,
+                    borderColor: '#777777',
+                    backgroundColor: 'rgba(0,0,0,0.04)',
+                    borderWidth: 3,
+                    tension: 0.32
+                }
+            ]
+        },
+        options: baseChartOptions()
+    });
+
+    paymentMethodChart = createOrUpdateChart(paymentMethodChart, 'payment-method-chart', {
+        type: 'doughnut',
+        data: {
+            labels: ['COD', 'UPI', 'Wallet'],
+            datasets: [{
+                data: [codRevenue, upiRevenue, walletRevenue],
+                backgroundColor: ['#0a0a0a', '#666666', '#bbbbbb'],
+                borderColor: '#ffffff',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: chartTextColor(), font: { weight: '700' } }
+                }
+            }
+        }
+    });
+
+    lossChart = createOrUpdateChart(lossChart, 'loss-chart', {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'COD Returns',
+                    data: lastSeven.map((stat) => Number(stat.cod_returns || 0)),
+                    borderColor: '#0a0a0a',
+                    backgroundColor: 'rgba(0,0,0,0.06)',
+                    tension: 0.3
+                },
+                {
+                    label: 'Refunds',
+                    data: lastSeven.map((stat) => Number(stat.refunds || 0)),
+                    borderColor: '#666666',
+                    backgroundColor: 'rgba(0,0,0,0.04)',
+                    tension: 0.3
+                },
+                {
+                    label: 'Failed Payments',
+                    data: lastSeven.map((stat) => Number(stat.payment_fail_loss || 0)),
+                    borderColor: '#aaaaaa',
+                    backgroundColor: 'rgba(0,0,0,0.03)',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: baseChartOptions()
+    });
+
+    renderInsights(data.insights || []);
+}
+
+function renderInsights(insights) {
+    if (!analyticsInsights) return;
+
+    const safeInsights = Array.isArray(insights) && insights.length ? insights : ['Analytics snapshots are warming up.'];
+    analyticsInsights.innerHTML = safeInsights.map((insight) => `
+        <div class="analytics-insight-item">
+            <span>↗</span>
+            <p>${escapeHtml(insight)}</p>
+        </div>
+    `).join('');
+}
+
+function renderHistoryMonth(monthStat) {
+    if (!monthStat) {
+        setAnalyticsText(historyMonthRevenue, '0.00');
+        setAnalyticsText(historyMonthProfit, '0.00');
+        setAnalyticsText(historyBestDay, '-');
+        setAnalyticsText(historyWorstDay, '-');
+        return;
+    }
+
+    setAnalyticsText(historyMonthRevenue, formatMoney(monthStat.total_revenue));
+    setAnalyticsText(historyMonthProfit, formatMoney(monthStat.total_profit));
+    setAnalyticsText(
+        historyBestDay,
+        monthStat.best_day && monthStat.best_day.date ?
+        `${monthStat.best_day.date} • ₹${formatMoney(monthStat.best_day.revenue)}` :
+        '-'
+    );
+    setAnalyticsText(
+        historyWorstDay,
+        monthStat.worst_day && monthStat.worst_day.date ?
+        `${monthStat.worst_day.date} • ₹${formatMoney(monthStat.worst_day.revenue)}` :
+        '-'
+    );
+}
+
+function renderMonthlyAnalytics(data) {
+    analyticsMonthlyStats = Array.isArray(data.stats) ? data.stats : [];
+
+    if (analyticsMonthSelect) {
+        analyticsMonthSelect.innerHTML = analyticsMonthlyStats.map((stat) => `
+            <option value="${escapeHtml(stat.month)}">${escapeHtml(stat.month)}</option>
+        `).join('');
+
+        if (analyticsMonthlyStats.length) {
+            analyticsMonthSelect.value = analyticsMonthlyStats[analyticsMonthlyStats.length - 1].month;
+        }
+    }
+
+    const labels = analyticsMonthlyStats.map((stat) => stat.month);
+    const revenue = analyticsMonthlyStats.map((stat) => Number(stat.total_revenue || 0));
+    const profit = analyticsMonthlyStats.map((stat) => Number(stat.total_profit || 0));
+
+    monthlyHistoryChart = createOrUpdateChart(monthlyHistoryChart, 'monthly-history-chart', {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Revenue',
+                    data: revenue,
+                    borderColor: '#0a0a0a',
+                    backgroundColor: 'rgba(0,0,0,0.08)',
+                    borderWidth: 3,
+                    tension: 0.32
+                },
+                {
+                    label: 'Profit',
+                    data: profit,
+                    borderColor: '#777777',
+                    backgroundColor: 'rgba(0,0,0,0.04)',
+                    borderWidth: 3,
+                    tension: 0.32
+                }
+            ]
+        },
+        options: baseChartOptions()
+    });
+
+    renderHistoryMonth(analyticsMonthlyStats[analyticsMonthlyStats.length - 1]);
+}
+
+async function fetchDailyAnalytics() {
+    const data = await analyticsRequest('/api/stats/daily?days=14');
+    renderDailyAnalytics(data);
+}
+
+async function fetchMonthlyAnalytics() {
+    const data = await analyticsRequest('/api/stats/monthly?months=12');
+    renderMonthlyAnalytics(data);
+}
+
+function startAnalyticsPolling() {
+    if (analyticsPollTimer) return;
+
+    analyticsPollTimer = setInterval(() => {
+        fetchLiveAnalytics(true).catch((error) => {
+            console.error('Live analytics polling error:', error);
+        });
+    }, 8000);
+}
+
+async function loadAnalyticsRoom(force = false) {
+    if (!document.getElementById('analytics-tab')) return;
+    if (analyticsLoaded && !force) {
+        startAnalyticsPolling();
+        return;
+    }
+
+    try {
+        await Promise.all([
+            fetchLiveAnalytics(false),
+            fetchDailyAnalytics(),
+            fetchMonthlyAnalytics()
+        ]);
+
+        analyticsLoaded = true;
+        startAnalyticsPolling();
+    } catch (error) {
+        console.error('Analytics load error:', error);
+        renderInsights([error.message || 'Failed to load analytics room']);
+        if (window.NextsUI) window.NextsUI.showToast(error.message || 'Failed to load analytics', 'error');
+    }
+}
+
+if (refreshAnalyticsBtn) {
+    refreshAnalyticsBtn.addEventListener('click', () => {
+        analyticsLiveCursor = '';
+        loadAnalyticsRoom(true);
+    });
+}
+
+if (analyticsMonthSelect) {
+    analyticsMonthSelect.addEventListener('change', () => {
+        const selectedMonth = analyticsMonthlyStats.find((stat) => stat.month === analyticsMonthSelect.value);
+        renderHistoryMonth(selectedMonth);
+    });
 }
 
 fetchProducts();

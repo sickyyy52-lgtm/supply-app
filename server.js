@@ -11,7 +11,9 @@ const orderRoutes = require('./routes/orders');
 const paymentRoutes = require('./routes/payments');
 const walletRoutes = require('./routes/wallet');
 const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
 const { validateEnv, getStartupConfigSummary } = require('./utils/env');
+const { startAnalyticsScheduler } = require('./utils/analytics');
 
 const app = express();
 
@@ -47,6 +49,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', analyticsRoutes);
 
 // Static serving
 app.use('/uploads', express.static(uploadsDir)); // legacy payment proof/QR images
@@ -67,6 +70,10 @@ app.get('/dashboard', (req, res) => {
 
 app.get('/cart', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'cart.html'));
+});
+
+app.get('/payment/upi', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'upi-payment.html'));
 });
 
 app.get('/payment/upi/:orderId', (req, res) => {
@@ -201,6 +208,7 @@ async function startServer() {
         console.log('[startup] Connecting to MongoDB...');
         await connectDb(config.mongoUri);
         console.log('[startup] MongoDB connected and ping verified.');
+        startAnalyticsScheduler();
 
         await new Promise((resolve, reject) => {
             const server = app.listen(config.port, () => {

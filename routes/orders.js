@@ -9,6 +9,7 @@ const WalletTransaction = require('../models/WalletTransaction');
 const { nextSequence } = require('../models/Counter');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const { cleanDocs, cleanDoc } = require('../utils/format');
+const { uploadBase64Image } = require('../utils/cloudinary');
 const {
     validateOrderCreate,
     validateOrderStatusUpdate
@@ -119,7 +120,7 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
         let orderStatus = 'Pending';
 
         if (normalizedMethod === 'UPI') {
-            paymentStatus = 'PENDING_VERIFICATION';
+            paymentStatus = 'WAITING_ADMIN_APPROVAL';
         } else if (normalizedMethod === 'COD') {
             paymentStatus = 'COD_CONFIRMED';
             orderStatus = 'Processing';
@@ -220,14 +221,32 @@ router.post('/', authMiddleware, validateOrderCreate, async(req, res) => {
             await order.save();
         }
 
+        if (normalizedMethod === 'UPI') {
+            const imageUrl = await uploadBase64Image(payment_proof_base64, 'order-payments');
+            const proof = await PaymentProof.create({
+                id: await nextSequence('paymentProof'),
+                user_id: req.user.id,
+                type: 'order',
+                reference_id: order.id,
+                amount: orderTotal,
+                image_url: imageUrl,
+                transaction_id: payment_utr || null,
+                status: 'submitted'
+            });
+
+            createdProofId = proof.id;
+            order.payment_proof_id = proof.id;
+            await order.save();
+        }
+
         res.json({
             message: normalizedMethod === 'UPI' ?
-                'Order created. Continue to UPI payment and upload proof.' :
+                'Payment proof submitted. Order is waiting for admin verification.' :
                 normalizedMethod === 'Wallet' ?
                 'Wallet payment successful. Order is processing.' :
                 'COD order confirmed. Order is processing.',
             orderId: order.id,
-            payment_url: normalizedMethod === 'UPI' ? `/payment/upi/${order.id}` : null,
+            payment_url: null,
             payment_status: order.payment_status,
             status: order.status,
             total_price: orderTotal

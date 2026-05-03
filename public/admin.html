@@ -76,6 +76,7 @@
             <button class="admin-tab-btn" data-tab="products-tab">Products</button>
             <button class="admin-tab-btn" data-tab="orders-tab">Orders</button>
             <button class="admin-tab-btn" data-tab="users-tab">Users</button>
+            <button class="admin-tab-btn" data-tab="analytics-tab">Analytics</button>
             <button class="admin-tab-btn" data-tab="password-resets-tab">Password Resets</button>
         </section>
 
@@ -291,6 +292,135 @@
             </div>
         </section>
 
+        <section id="analytics-tab" class="admin-tab-content">
+            <div class="analytics-room">
+                <div class="admin-card-head admin-card-head-space analytics-room-head">
+                    <div>
+                        <p class="section-tag">BUSINESS ANALYTICS ROOM</p>
+                        <h2>Live Pulse + Historical Intelligence</h2>
+                    </div>
+                    <button id="refresh-analytics-btn" class="admin-btn quick-status-btn">Refresh Analytics</button>
+                </div>
+
+                <div class="analytics-kpi-grid">
+                    <div class="analytics-kpi-card">
+                        <span>Live Revenue</span>
+                        <strong>₹<b id="analytics-live-revenue">0.00</b></strong>
+                    </div>
+                    <div class="analytics-kpi-card">
+                        <span>Live Profit</span>
+                        <strong>₹<b id="analytics-live-profit">0.00</b></strong>
+                    </div>
+                    <div class="analytics-kpi-card">
+                        <span>Conversion</span>
+                        <strong><b id="analytics-live-conversion">0.00</b>%</strong>
+                    </div>
+                    <div class="analytics-kpi-card">
+                        <span>Paid Orders</span>
+                        <strong id="analytics-live-paid-orders">0</strong>
+                    </div>
+                </div>
+
+                <div class="analytics-grid analytics-grid-live">
+                    <div class="analytics-chart-card analytics-chart-card-wide">
+                        <div class="analytics-chart-head">
+                            <div>
+                                <p class="section-tag">LIVE</p>
+                                <h3>Revenue Line Graph</h3>
+                            </div>
+                            <small id="analytics-live-updated">Waiting for updates...</small>
+                        </div>
+                        <canvas id="live-revenue-chart" height="130"></canvas>
+                    </div>
+                    <div class="analytics-chart-card">
+                        <div class="analytics-chart-head">
+                            <div>
+                                <p class="section-tag">INSIGHTS</p>
+                                <h3>Automatic Signals</h3>
+                            </div>
+                        </div>
+                        <div id="analytics-insights" class="analytics-insights-list"></div>
+                    </div>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-chart-card">
+                        <div class="analytics-chart-head">
+                            <div>
+                                <p class="section-tag">DAILY SNAPSHOT</p>
+                                <h3>Mon–Sun Revenue</h3>
+                            </div>
+                        </div>
+                        <canvas id="daily-revenue-chart" height="170"></canvas>
+                    </div>
+
+                    <div class="analytics-chart-card">
+                        <div class="analytics-chart-head">
+                            <div>
+                                <p class="section-tag">PROFIT ENGINE</p>
+                                <h3>Profit vs Revenue</h3>
+                            </div>
+                        </div>
+                        <canvas id="profit-revenue-chart" height="170"></canvas>
+                    </div>
+
+                    <div class="analytics-chart-card">
+                        <div class="analytics-chart-head">
+                            <div>
+                                <p class="section-tag">PAYMENTS</p>
+                                <h3>Method Split</h3>
+                            </div>
+                        </div>
+                        <canvas id="payment-method-chart" height="170"></canvas>
+                    </div>
+
+                    <div class="analytics-chart-card">
+                        <div class="analytics-chart-head">
+                            <div>
+                                <p class="section-tag">LOSSES</p>
+                                <h3>COD / Refund / Failures</h3>
+                            </div>
+                        </div>
+                        <canvas id="loss-chart" height="170"></canvas>
+                    </div>
+                </div>
+
+                <div class="analytics-history-card">
+                    <div class="admin-card-head admin-card-head-space">
+                        <div>
+                            <p class="section-tag">MONTHLY HISTORY</p>
+                            <h2>Business History Room</h2>
+                        </div>
+                        <select id="analytics-month-select" class="admin-search-input"></select>
+                    </div>
+
+                    <div class="analytics-history-grid">
+                        <div class="analytics-history-summary">
+                            <div>
+                                <span>Monthly Revenue</span>
+                                <strong>₹<b id="history-month-revenue">0.00</b></strong>
+                            </div>
+                            <div>
+                                <span>Monthly Profit</span>
+                                <strong>₹<b id="history-month-profit">0.00</b></strong>
+                            </div>
+                            <div>
+                                <span>Best Day</span>
+                                <strong id="history-best-day">-</strong>
+                            </div>
+                            <div>
+                                <span>Worst Day</span>
+                                <strong id="history-worst-day">-</strong>
+                            </div>
+                        </div>
+                        <div class="analytics-chart-card analytics-chart-card-flat">
+                            <canvas id="monthly-history-chart" height="160"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="password-resets-tab" class="admin-tab-content">
             <div class="admin-users-card">
                 <div class="admin-card-head admin-card-head-space">
@@ -318,6 +448,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/utils.js"></script>
     <script src="/js/admin.js"></script>
 </body>
